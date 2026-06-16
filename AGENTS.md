@@ -1,6 +1,20 @@
 # dx-config
 
-Machine-wide DX and Herdr configuration for this Mac.
+Machine-wide DX and Herdr configuration for this Mac. Dotfiles repo — not a code repo.
+
+## Repo boundary (do not merge with kimi-toolchain)
+
+| | `kimi-toolchain` | `dx-config` |
+|---|---|---|
+| Purpose | Code — the tools | Config — how tools are wired to this machine |
+| Change cadence | Features, semver releases | New machine, agent, integration |
+| Blast radius | Every project using the toolchain | This user's environment only |
+
+**This repo may contain:** TOML/JSON/Markdown config, skills, shell helpers that delegate to PATH, `install.sh`, thin spawn stubs.
+
+**This repo must not contain:** executable logic that implements doctors, bootstrap, or path resolution. That belongs in `kimi-toolchain` (or another code repo) and is installed to `~/.local/bin/` by sync or install — referenced, not authored here.
+
+Known exception (migrate out): `local/bin/herdr-doctor`, `herdr-project`, `herdr-spawn`, and `config/dx/lib/herdr-agents.ts` are still in this repo pending move to `kimi-toolchain`.
 
 ## Config symlink chain
 

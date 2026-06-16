@@ -1,6 +1,11 @@
 # Herdr — Local DX Configuration & Agent Reference (This Machine)
 
-Canonical upstream docs: [configuration.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/configuration.mdx)
+Canonical upstream docs ([`website/src/content/docs/`](https://github.com/ogulcancelik/herdr/tree/master/website/src/content/docs)):
+
+- [configuration.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/configuration.mdx)
+- [session-state.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/session-state.mdx)
+- [persistence-remote.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/persistence-remote.mdx)
+- [agents.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/agents.mdx)
 
 **Purpose**: Opinionated, machine-specific layer on top of upstream Herdr ([herdr.dev/docs](https://herdr.dev/docs/)).
 
@@ -48,6 +53,27 @@ config/shell/herdr.sh                →  herder ~/project bootstrap
 
 ---
 
+## Global machine prefs (`config/dx/herdr.toml`)
+
+Canonical upstream references:
+
+- [configuration.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/configuration.mdx) — terminal defaults, worktrees, `[remote]`, UI, keys
+- [session-state.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/session-state.mdx) — what survives detach/restart/handoff
+- [persistence-remote.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/persistence-remote.mdx) — detach, named sessions, `herdr --remote`, direct attach
+
+| Section | Key | This machine | Upstream default | Notes |
+|---------|-----|--------------|------------------|-------|
+| `[terminal]` | `shell_mode` | `auto` | `auto` | Login shells on macOS so `path_helper` and Homebrew PATH run in new panes; non-login elsewhere. Spawn wrappers and command panes keep their own execution paths. |
+| `[terminal]` | `new_cwd` | `follow` | `follow` | New panes/tabs/workspaces inherit source cwd; CLI `--cwd` still wins. |
+| `[worktrees]` | `directory` | `~/Projects/herdr-worktrees` | `~/.herdr/worktrees` | Sibling-style checkouts under `<dir>/<repo>/<branch-slug>`. Grouped under parent workspace in sidebar; closing parent closes the Herdr group, not the checkout. Delete via **Delete worktree checkout...** on a child row. |
+| `[remote]` | `manage_ssh_config` | `true` | `true` | `herder-remote` / `herdr --remote`: temp SSH config (user config first) with keepalive fallback; `--remote-keybindings server` for remote keys; `--handoff` experimental. |
+| `[session]` | `resume_agents_on_restore` | `true` | `true` | Native session resume for integrated agents after server restart; Grok is screen-only — no resume. |
+| `[experimental]` | `pane_history` | `false` | `false` | Off — pane output can contain secrets. When enabled, history lives in `~/.config/herdr/session-history.json`. |
+
+After edits: `herdr server reload-config` (most UI prefs hot-reload; startup-only settings need restart).
+
+---
+
 ## Official Herdr vs This Machine's DX Layer
 
 | Topic | Official ([herdr.dev/docs](https://herdr.dev/docs/)) | This DX Layer (`config/dx`) | Notes |
@@ -62,26 +88,25 @@ config/shell/herdr.sh                →  herder ~/project bootstrap
 | Local manifest overrides | `~/.config/herdr/agent-detection/<agent>.toml` | Not currently used | Available if we need to tweak detection rules |
 | Plugins / worktrees / marketplace | Full socket API surface | Control skill covers workspace/tab/pane only | Plugins not yet needed in our workflow |
 
-**Key conceptual clarification**:
+**Key conceptual clarification** (from [agents.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/agents.mdx)):
 
-For **codex**, **claude**, and **cursor**:
+- **Lifecycle authority** (kimi, hermes when hooks installed): integration reports `idle` / `working` / `blocked` + session ID; Herdr does **not** also run screen manifest fallback for that pane.
+- **Session identity only** (codex, claude, cursor): hooks provide native session restore; **state still comes from the live bottom-buffer screen snapshot**, not hooks — hooks can miss permission approvals and interrupts.
+- **Screen only** (grok): manifest detection only; no integration role. DX still provides spawn wrapper + keybinding.
+- **Blocked** is strict for screen-manifest agents: only when bottom-buffer matches known approval UI; otherwise `idle` with `default_known_agent_idle_fallback` in explain output.
 
-- The integration hook primarily provides **session identity** and **restore** capability.
-- **Idle / working / blocked** state is **still detected from the screen manifest** (terminal output), **not** from the integration hook.
-- State authority remains screen-based for these three even when the integration is installed.
+Upstream pages (source → rendered):
 
-**Grok** is screen-manifest only (no integration role). DX still provides full spawn wrapper + keybinding.
-
-Upstream pages:
-
-| Topic | Link |
-|-------|------|
-| Agents and status authority | [herdr.dev/docs/agents](https://herdr.dev/docs/agents/) |
-| Integration install per agent | [herdr.dev/docs/integrations](https://herdr.dev/docs/integrations/) |
-| Detach, restart, restore | [herdr.dev/docs/session-state](https://herdr.dev/docs/session-state/) |
-| CLI automation | [herdr.dev/docs/socket-api](https://herdr.dev/docs/socket-api/) |
-| Agent onboarding prompt | [herdr.dev/agent-guide.md](https://herdr.dev/agent-guide.md) |
-| Upstream control skill | [github.com/ogulcancelik/herdr/SKILL.md](https://raw.githubusercontent.com/ogulcancelik/herdr/master/SKILL.md) |
+| Topic | Source | Rendered |
+|-------|--------|----------|
+| Configuration | [configuration.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/configuration.mdx) | [herdr.dev/docs/configuration](https://herdr.dev/docs/configuration/) |
+| Agents & status authority | [agents.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/agents.mdx) | [herdr.dev/docs/agents](https://herdr.dev/docs/agents/) |
+| Persistence & remote | [persistence-remote.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/persistence-remote.mdx) | [herdr.dev/docs/persistence-remote](https://herdr.dev/docs/persistence-remote/) |
+| Session state & restore | [session-state.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/session-state.mdx) | [herdr.dev/docs/session-state](https://herdr.dev/docs/session-state/) |
+| Integrations | — | [herdr.dev/docs/integrations](https://herdr.dev/docs/integrations/) |
+| CLI automation | — | [herdr.dev/docs/socket-api](https://herdr.dev/docs/socket-api/) |
+| Agent onboarding | — | [herdr.dev/agent-guide.md](https://herdr.dev/agent-guide.md) |
+| Upstream control skill | [SKILL.md](https://github.com/ogulcancelik/herdr/blob/master/SKILL.md) | — |
 
 ```
 Herdr binary
@@ -135,9 +160,11 @@ export const SCREEN_DETECTED_AGENTS = ["grok"] as const;
 
 | Tier | Agents | Behavior |
 |------|--------|----------|
-| **Lifecycle authority** | kimi, hermes | Full hooks report idle/working/blocked + session ID when integration installed; screen manifest fallback otherwise |
-| **Session identity** | codex, claude, cursor | Integration provides session ID/restore; **state still comes from screen manifest** |
+| **Lifecycle authority** | kimi, hermes | Hooks authoritative when installed and reporting; no parallel screen fallback. Falls back to screen manifest when hooks absent. |
+| **Session identity** | codex, claude, cursor | Integration provides session ID/restore only; **state from bottom-buffer screen manifest** |
 | **Screen only** | grok | Manifest detection only. No integration hook. Full DX spawn + keybinding still provided. |
+
+Detection reads the **live bottom of the pane buffer**, not the scrolled viewport. Scrollback in Herdr does not change what manifests match.
 
 ---
 
@@ -230,33 +257,83 @@ herdr-quickref              # workspaces, agents, key cheats (also: herder-quick
 
 Agent keybindings use `~/.local/bin/herdr-spawn-*` wrappers so binaries resolve from login-shell PATH inside Herdr panes.
 
-## Persistence & Public IDs
+## Session state and restore
 
-| Case | Processes | Layout | Agent conversation |
-|------|-----------|--------|-------------------|
-| Detach (`ctrl+b q`) | Keep running | Yes | Yes — processes never stopped |
-| Server restart | Stopped | Restored from snapshot | Resumes when integration reports session id |
-| `brew upgrade herdr` | Stopped on restart | Restored | Same as server restart |
+Canonical upstream: [session-state.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/session-state.mdx) ([rendered](https://herdr.dev/docs/session-state/)). Herdr has five persistence paths; they solve different problems.
 
-`resume_agents_on_restore = true` (default) uses official integration hooks. `pane_history` stays **off** — pane output can contain secrets.
+### What survives
+
+| Case | Processes keep running | Layout returns | Recent screen returns | Agent conversation resumes |
+|------|------------------------|----------------|-----------------------|----------------------------|
+| Detach and reattach (`prefix+q`, then `herdr`) | Yes | Yes | Yes — live terminal | Yes — process never stopped |
+| Server restart | No | Yes — snapshot | Only with `pane_history = true` | Only with native agent session restore |
+| Update without `--handoff` | Compatible servers may keep running | Yes after restart | Only with pane history | Only with native agent restore |
+| Update with `--handoff` | Best effort | Yes | Yes if handoff succeeds | Yes if handoff succeeds |
+
+**This machine:** Homebrew install — use `herder-maintain` / `brew upgrade herdr`, not `herdr update`. No live handoff via package manager; server restart follows the snapshot + native-restore path.
+
+### Paths (upstream names)
+
+1. **Live persistence** — `prefix+q` detach keeps the server and all pane processes running. Strongest path; use for daily work.
+2. **Snapshot restore** — after server stop/start, workspaces/tabs/panes/cwd/layout/focus return; arbitrary processes do not. Unsupported panes reopen as new shells in saved directories.
+3. **Pane screen history** — `[experimental] pane_history = true` replays recent terminal contents after restart (not the old process). **Off here** — treat `~/.config/herdr/` like terminal history if enabled.
+4. **Native agent session restore** — `[session] resume_agents_on_restore = true` (default). Integration-reported session IDs restart supported agents after attach (across workspaces/tabs once the client provides terminal size and theme context — no per-pane focus needed). If native restore applies, it wins over pane history for that pane. OMP v2 reports state but not session refs for restore.
+5. **Live handoff** — experimental `herdr update --handoff` / `herdr --remote workbox --handoff`; not available on Homebrew installs. Plain `herdr update` and plain `herdr --remote` use normal stop/restart.
+
+### Native restore — daily agents on this Mac
+
+`herdr integration status` — all required integrations current as of 2026-06-16:
+
+| Agent | Min integration | Resume command | Status |
+|-------|-----------------|----------------|--------|
+| kimi | v3 | `kimi --session <id>` | current (v3) |
+| hermes | v2 | `hermes --resume <id>` | current (v2) |
+| codex | v5 | `codex resume <id>` | current (v5) |
+| claude | v6 | `claude --resume <id>` | current (v6) |
+| cursor | v1 | `cursor-agent --resume <id>` | current (v1) |
+| grok | — | — | Screen manifest only; no native session restore |
+
+Stale, missing, or unsupported session refs restore as shells in the saved pane directory. Reinstall with `herdr integration install <agent>` when doctor flags version drift.
+
+Runtime snapshot: `~/.config/herdr/session.json` (never commit). Ephemeral sockets/logs live alongside it.
+
+### Public IDs
 
 Workspaces, tabs, and panes use stable handles: `w1`, `w1:t1`, `w1:p1` (v0.7.0+). Closed ids do not get reused. Re-read ids from `herdr workspace list`, `herdr tab list`, or `herdr pane list` before targeting a pane in scripts.
 
+## Persistence and remote access
+
+Canonical upstream: [persistence-remote.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/persistence-remote.mdx) ([rendered](https://herdr.dev/docs/persistence-remote/)). For survival matrix after server stop, see [Session state and restore](#session-state-and-restore).
+
+| Workflow | Command | Notes |
+|----------|---------|-------|
+| Detach client | `prefix+q` (`ctrl+b q`) | Server + panes keep running |
+| Reattach | `herder` or `herdr` | Default session |
+| Stop server + panes | `herdr server stop` | Full stop — unlike detach |
+| Named sessions | `herdr session list` / `attach` / `stop` / `delete` | Independent servers; shared global config |
+| Remote thin client | `herder-remote workbox` | Local UI over SSH; local keybindings snapshot at attach time |
+| Remote named session | `herdr --remote workbox --session agents` | |
+| Remote live handoff | `herdr --remote workbox --handoff` | Experimental; Homebrew local install still upgrades via brew |
+| Direct agent attach | `herdr agent attach reviewer` | One terminal, not full UI; `prefix+q` detach |
+| Debug escape hatch | `herdr --no-session` | No background server — rarely needed |
+
+Remote attach: `[remote] manage_ssh_config = true` (see global prefs). `HERDR_REMOTE_BINARY` overrides binary copied to remote for local/custom builds.
+
 ## Detection Manifests
 
-Screen rules live in Herdr's manifest cache (bundled + remote). Refresh manually:
+Bundled manifests ship in the binary. Herdr also fetches remote rule updates from herdr.dev into the state directory and reloads the in-memory cache automatically. Manual refresh:
 
 ```sh
-herdr server update-agent-manifests   # or: herdr-doctor --fix
+herdr server update-agent-manifests   # or: herder-maintain / herdr-doctor --fix
 ```
 
-Local overrides (optional) shadow remote/bundled rules:
+Local overrides (optional) **always win** over remote/bundled:
 
 ```
 ~/.config/herdr/agent-detection/<agent>.toml
 ```
 
-After editing a local override: `herdr server reload-agent-manifests` or restart the server. See [Agents → Detection manifests](https://herdr.dev/docs/agents/#detection-manifests).
+Without a local override, Herdr uses the newer compatible manifest between cached remote and bundled. Remote manifests patch rules for known agents only — new agent types still need a binary update. After editing a local override: `herdr server reload-agent-manifests` or restart. See [agents.mdx → Detection manifests](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/agents.mdx).
 
 ## Debugging Wrong Agent State
 
@@ -268,7 +345,7 @@ herdr agent explain w1:p1
 herdr agent explain w1:p1 --json
 ```
 
-Explain output shows manifest source and version, whether a lifecycle authority skipped screen detection, matched rule, and idle-fallback reason. For **codex/claude/cursor** panes, start by checking screen manifest match — not integration hook state.
+Explain output shows agent, final state, lifecycle-authority skip, manifest source/version, cached remote version, local override shadowing, remote update status, matched rule, evidence flags, matcher/region evidence, and idle-fallback reason (`default_known_agent_idle_fallback` when no rule matched). For **codex/claude/cursor** panes, start with screen manifest — not integration hook state.
 
 Offline transcript check:
 

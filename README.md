@@ -64,16 +64,17 @@ Toolchain repos: `kimi-fix <path> --profile toolchain` scaffolds `[herdr]` + fin
 
 Machine reference: `config/dx/herdr.md` (deployed to `~/.config/dx/herdr.md`). Canonical API docs:
 
-| Topic | Link |
-|-------|------|
-| Overview | [herdr.dev/docs](https://herdr.dev/docs/) |
-| Socket API (CLI automation) | [herdr.dev/docs/socket-api](https://herdr.dev/docs/socket-api/) |
-| CLI reference | [herdr.dev/docs/cli-reference](https://herdr.dev/docs/cli-reference/) |
-| Agents & state authority | [herdr.dev/docs/agents](https://herdr.dev/docs/agents/) |
-| Integrations | [herdr.dev/docs/integrations](https://herdr.dev/docs/integrations/) |
-| Session restore | [herdr.dev/docs/session-state](https://herdr.dev/docs/session-state/) |
+| Topic | Rendered | Upstream source |
+|-------|----------|-----------------|
+| Overview | [herdr.dev/docs](https://herdr.dev/docs/) | — |
+| Configuration | [configuration](https://herdr.dev/docs/configuration/) | [configuration.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/configuration.mdx) |
+| Agents & state authority | [agents](https://herdr.dev/docs/agents/) | [agents.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/agents.mdx) |
+| Persistence & remote | [persistence-remote](https://herdr.dev/docs/persistence-remote/) | [persistence-remote.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/persistence-remote.mdx) |
+| Session state & restore | [session-state](https://herdr.dev/docs/session-state/) | [session-state.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/session-state.mdx) |
+| Socket API | [socket-api](https://herdr.dev/docs/socket-api/) | — |
+| Integrations | [integrations](https://herdr.dev/docs/integrations/) | — |
 
-Also in `config/dx/herdr.json` under `docs` for programmatic discovery.
+Upstream docs live under `website/src/content/docs/` in the Herdr repo (not `src/content/docs/`). Also in `config/dx/herdr.json` under `docs` for programmatic discovery.
 
 ## Open in Cursor
 

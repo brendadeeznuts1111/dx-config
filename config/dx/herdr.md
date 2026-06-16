@@ -42,7 +42,7 @@ config/shell/herdr.sh                →  herder ~/project bootstrap
 
 **Do not recreate** `~/.config/dx/lib/herdr-agents.ts` — that path is retired; agent registry lives in kimi-toolchain only.
 
-**Machine project discovery:** optional `~/.config/dx/projects.json` (template at `config/dx/templates/projects.json`) lists repos for `herdr-doctor` project profile scans. Installed on first `install.sh` if missing; edit `~/…` paths for this machine.
+**Machine project discovery:** optional `~/.config/dx/projects.json` (template at `config/dx/templates/projects.json`) lists repos for `herdr-doctor` project profile scans. Installed on first `install.sh` if missing. Include at least `kimi-toolchain` and `dx-config` in `topProjects`; richer DX discovery fields (`packageName`, `discovery`, …) are optional.
 
 ---
 

@@ -42,6 +42,11 @@ if [[ -L "$legacy_agents_lib" ]] && [[ ! -e "$legacy_agents_lib" ]]; then
   rm -f "$legacy_agents_lib"
   echo "removed broken symlink $legacy_agents_lib"
 fi
+for legacy_bak in "$HOME/.config/dx/lib"/herdr-agents.ts.bak.*; do
+  [[ -e "$legacy_bak" ]] || continue
+  rm -f "$legacy_bak"
+  echo "removed stale backup $(basename "$legacy_bak")"
+done
 if [[ -d "$HOME/.config/dx/lib" ]] && [[ -z "$(ls -A "$HOME/.config/dx/lib" 2>/dev/null)" ]]; then
   rmdir "$HOME/.config/dx/lib" 2>/dev/null && echo "removed empty $HOME/.config/dx/lib"
 fi

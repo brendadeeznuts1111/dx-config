@@ -3,11 +3,15 @@
   "topProjects": [
     {
       "key": "kimi-toolchain",
-      "path": "~/kimi-toolchain"
+      "name": "kimi-toolchain",
+      "path": "~/kimi-toolchain",
+      "tier": "top"
     },
     {
       "key": "dx-config",
-      "path": "~/dx-config"
+      "name": "dx-config",
+      "path": "~/dx-config",
+      "tier": "top"
     }
   ]
 }

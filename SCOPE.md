@@ -44,14 +44,15 @@ Version-control **how tools attach to this machine**. Implement the tools in `ki
 
 | Allowed | Examples |
 |---------|----------|
-| Spawn stubs | `herdr-spawn-*` (delegate to `herdr-spawn` on PATH) |
 | Small helpers | `herdr-quickref` |
 
-`herdr-doctor`, `herdr-project`, and `herdr-spawn` core binaries are **not** in this repo — see [Herdr CLIs (kimi-toolchain)](#herdr-clis-kimi-toolchain) below.
+`herdr-doctor`, `herdr-project`, `herdr-spawn`, and `herdr-spawn-*` are **not** in this repo — see [Herdr CLIs (kimi-toolchain)](#herdr-clis-kimi-toolchain) below.
 
 ### Install (`scripts/install.sh`)
 
-Symlink `config/dx/` and shell/skill paths → `~/.config/`, run kimi-toolchain `install-wrappers` for Herdr CLIs, copy thin `local/bin/herdr-spawn-*` + `herdr-quickref`, link Herdr config chain and skill symlinks.
+Symlink `config/dx/` and shell/skill paths → `~/.config/`, run kimi-toolchain `sync` + `install-wrappers` (Herdr CLIs + spawn stubs), copy `herdr-quickref`, link Herdr config chain and skill symlinks.
+
+**Fresh machine:** `./scripts/bootstrap-machine.sh` (requires kimi-toolchain clone + bun).
 
 ### This repo's Herdr profile (`.dx/herdr.toml`)
 
@@ -111,7 +112,7 @@ Full reference: `config/dx/herdr.md`
 
 ## Herdr CLIs (kimi-toolchain)
 
-`herdr-doctor`, `herdr-project`, and `herdr-spawn` are authored in `kimi-toolchain` (`src/bin/`, `src/lib/herdr-agents.ts`). Deployed via `bun run sync` → `~/.kimi-code/tools/` and `bun run install-wrappers` → `~/.local/bin/`. dx-config `install.sh` delegates to that flow and only copies thin `herdr-spawn-*` stubs plus `herdr-quickref`.
+`herdr-doctor`, `herdr-project`, `herdr-spawn`, and `herdr-spawn-*` are authored in `kimi-toolchain`. Deployed via `bun run sync` → `~/.kimi-code/tools/` and `bun run install-wrappers` → `~/.local/bin/`. dx-config `install.sh` and `bootstrap-machine.sh` delegate to that flow; this repo only ships `herdr-quickref`.
 
 ---
 

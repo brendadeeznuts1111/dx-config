@@ -25,8 +25,10 @@ dx-config/
 │   └── templates/
 ├── config/shell/        # Shell helpers (deployed to ~/.config/shell/)
 ├── config/agents/       # Agent skills (deployed to ~/.config/agents/)
-├── local/bin/           # herdr-spawn-* stubs, herdr-quickref (CLIs in kimi-toolchain)
-└── scripts/install.sh   # Symlink deploy
+├── local/bin/           # herdr-quickref only (CLIs + spawn stubs in kimi-toolchain)
+└── scripts/
+    ├── install.sh           # Symlink deploy + kimi-toolchain sync
+    └── bootstrap-machine.sh # Fresh machine: sync + install + doctor
 ```
 
 **Not in this repo** (runtime only):
@@ -38,7 +40,10 @@ dx-config/
 ## Workflow
 
 ```sh
-# First-time or after clone
+# Fresh machine (kimi-toolchain cloned to ~/kimi-toolchain)
+./scripts/bootstrap-machine.sh
+
+# Config-only refresh (after dx-config edits)
 ./scripts/install.sh
 
 # Edit here, then reload

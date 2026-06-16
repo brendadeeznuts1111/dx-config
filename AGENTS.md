@@ -16,7 +16,7 @@ Full scope: [SCOPE.md](SCOPE.md).
 
 **This repo must not contain:** executable logic that implements doctors, bootstrap, or path resolution. That belongs in `kimi-toolchain` (or another code repo) and is installed to `~/.local/bin/` by sync or install — referenced, not authored here.
 
-Herdr CLIs (`herdr-doctor`, `herdr-project`, `herdr-spawn`) are authored in `kimi-toolchain` and deployed via `bun run sync` + `install-wrappers`. This repo keeps thin spawn stubs (`herdr-spawn-*`) and `herdr-quickref` only.
+Herdr CLIs (`herdr-doctor`, `herdr-project`, `herdr-spawn`, `herdr-spawn-*`) are authored in `kimi-toolchain` and deployed via `bun run sync` + `install-wrappers`. This repo keeps `herdr-quickref` only. Fresh machine: `./scripts/bootstrap-machine.sh`.
 
 ## Config symlink chain
 

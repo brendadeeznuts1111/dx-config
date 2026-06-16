@@ -40,25 +40,29 @@ if [[ -d "$HOME/.config/dx/lib" ]] && [[ -z "$(ls -A "$HOME/.config/dx/lib" 2>/d
   rmdir "$HOME/.config/dx/lib" 2>/dev/null && echo "removed empty $HOME/.config/dx/lib"
 fi
 
-# Herdr CLIs (doctor, project, spawn) are authored in kimi-toolchain → ~/.local/bin via sync.
+# Herdr CLIs + spawn stubs are authored in kimi-toolchain → ~/.local/bin via sync + install-wrappers.
 KIMI_TOOLCHAIN="${KIMI_TOOLCHAIN:-$HOME/kimi-toolchain}"
-if [[ -x "$KIMI_TOOLCHAIN/scripts/install-bin-wrappers.sh" ]]; then
+if [[ -d "$KIMI_TOOLCHAIN" ]] && command -v bun >/dev/null 2>&1; then
+  (cd "$KIMI_TOOLCHAIN" && bun run sync && bash scripts/install-bin-wrappers.sh)
+elif [[ -x "$KIMI_TOOLCHAIN/scripts/install-bin-wrappers.sh" ]]; then
   bash "$KIMI_TOOLCHAIN/scripts/install-bin-wrappers.sh"
 else
-  echo "warn: kimi-toolchain not found — run: cd ~/kimi-toolchain && bun run sync && bun run install-wrappers"
+  echo "warn: kimi-toolchain not found — run: ./scripts/bootstrap-machine.sh"
 fi
 
-# Thin spawn stubs + quickref only (no business logic).
-for bin in "$REPO"/local/bin/herdr-quickref "$REPO"/local/bin/herdr-spawn-*; do
-  [[ -e "$bin" ]] || continue
-  name="$(basename "$bin")"
-  dest="$HOME/.local/bin/$name"
-  if [[ -L "$dest" ]]; then
-    rm -f "$dest"
-  fi
-  cp -f "$bin" "$dest"
+# dx-config helpers only (spawn stubs come from kimi-toolchain install-wrappers).
+if [[ -f "$REPO/local/bin/herdr-quickref" ]]; then
+  dest="$HOME/.local/bin/herdr-quickref"
+  cp -f "$REPO/local/bin/herdr-quickref" "$dest"
   chmod +x "$dest"
   echo "copied $dest"
+fi
+
+# Drop install-time backups from prior full-binary copies (cosmetic).
+for bak in "$HOME/.local/bin"/herdr-*.bak.*; do
+  [[ -e "$bak" ]] || continue
+  rm -f "$bak"
+  echo "removed stale backup $(basename "$bak")"
 done
 
 mkdir -p "$HOME/.config/herdr"

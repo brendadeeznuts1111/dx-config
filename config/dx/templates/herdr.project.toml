@@ -8,14 +8,18 @@ shellPane = true
 shellSplit = "right"
 bootstrap = [
   "dx config --project .",
-  "git status -sb",
-  "herdr-quickref",
+  "echo 'Finish work: bun run finish-work --message \"...\"'",
+  "bun run check:fast && echo '✅ Ready to commit'",
 ]
 
 # Optional named session (empty = default)
 # session = "work"
 
-# Optional extra tabs with shell commands
+# Mirror dx/workspace.toml tabs — see kimi-toolchain dx/workspace.toml
+[[herdr.tabs]]
+label = "doctor"
+command = "kimi-doctor --quick 2>/dev/null || true"
+
 [[herdr.tabs]]
 label = "shell"
-command = "herdr-quickref"
+command = "git status -sb; herdr-quickref"

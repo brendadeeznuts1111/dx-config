@@ -185,3 +185,7 @@ herder ~/dx-config
 ---
 
 *Last updated: 2026-06-16*
+
+### Migration note
+
+Upstream `kimi-toolchain` now includes `src/lib/herdr-project-config.ts` and integration tests — align with dx-config `local/bin/herdr-project` before Phase 2 moves.

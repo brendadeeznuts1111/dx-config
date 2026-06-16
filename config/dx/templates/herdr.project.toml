@@ -1,0 +1,19 @@
+# Project Herdr profile — copy to .dx/herdr.toml or add [herdr] to dx.config.toml
+schemaVersion = 1
+enabled = true
+workspaceLabel = "my-project"
+primaryAgent = "kimi"
+secondaryAgents = ["codex"]
+shellPane = true
+shellSplit = "right"
+bootstrap = [
+  "dx config --project .",
+]
+
+# Optional named session (empty = default)
+# session = "work"
+
+# Optional extra tabs with shell commands
+# [[herdr.tabs]]
+# label = "logs"
+# command = "bun run dev"

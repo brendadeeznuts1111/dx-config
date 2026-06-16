@@ -1,0 +1,458 @@
+#!/usr/bin/env bun
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { isAbsolute, join, normalize, resolve } from "node:path";
+import { TOML } from "bun";
+import { resolveAgentArgv } from "../../.config/dx/lib/herdr-agents.ts";
+
+const HOME = process.env.HOME || "/Users/nolarose";
+const DX_DIR = join(HOME, ".config/dx");
+const TEMPLATE_PATH = join(DX_DIR, "templates/herdr.project.toml");
+const PROJECT_CONFIG_NAMES = [
+  ".dx/herdr.toml",
+  "dx.config.toml",
+  ".dx/config.toml",
+  ".config/dx.toml",
+];
+
+function parseArgs(argv) {
+  const args = [...argv];
+  const flags = {
+    json: args.includes("--json"),
+    attach: args.includes("--attach"),
+    force: args.includes("--force"),
+    help: args.includes("--help") || args.includes("-h"),
+  };
+  const positionals = args.filter((arg) => !arg.startsWith("-"));
+  return { flags, command: positionals[0] || "bootstrap", path: positionals[1] || process.cwd() };
+}
+
+function run(cmd, args = [], timeout = 30_000) {
+  try {
+    return {
+      ok: true,
+      output: execFileSync(cmd, args, {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+        timeout,
+      }).trim(),
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      output: `${error.stdout || ""}${error.stderr || ""}`.trim(),
+      code: error.status ?? 1,
+    };
+  }
+}
+
+function runJson(cmd, args = []) {
+  const result = run(cmd, args);
+  if (!result.ok) return { ok: false, error: result.output, json: null };
+  try {
+    return { ok: true, json: JSON.parse(result.output), error: null };
+  } catch {
+    return { ok: false, error: "invalid JSON from herdr CLI", json: null };
+  }
+}
+
+function resolveProject(path) {
+  const root = isAbsolute(path) ? normalize(path) : resolve(process.cwd(), path);
+  if (!existsSync(root)) throw new Error(`project path not found: ${root}`);
+  return root;
+}
+
+function readToml(path) {
+  return TOML.parse(readFileSync(path, "utf8"));
+}
+
+function extractHerdrSection(doc) {
+  if (!doc || typeof doc !== "object") return null;
+  const section = doc.herdr;
+  if (!section || typeof section !== "object") return null;
+  return {
+    schemaVersion: section.schemaVersion ?? doc.schemaVersion ?? 1,
+    enabled: section.enabled !== false,
+    workspaceLabel: section.workspaceLabel || doc.name || null,
+    primaryAgent: section.primaryAgent || null,
+    secondaryAgents: Array.isArray(section.secondaryAgents) ? section.secondaryAgents : [],
+    shellPane: section.shellPane !== false,
+    shellSplit: section.shellSplit === "down" ? "down" : "right",
+    bootstrap: Array.isArray(section.bootstrap) ? section.bootstrap.filter((item) => typeof item === "string") : [],
+    session: typeof section.session === "string" ? section.session : "",
+    tabs: Array.isArray(section.tabs) ? section.tabs : [],
+    sourcePath: section.__sourcePath || null,
+  };
+}
+
+function discoverConfig(projectPath) {
+  for (const name of PROJECT_CONFIG_NAMES) {
+    const candidate = join(projectPath, name);
+    if (!existsSync(candidate)) continue;
+    const doc = readToml(candidate);
+    const section = extractHerdrSection(doc);
+    if (!section) continue;
+    section.sourcePath = candidate;
+    section.projectPath = projectPath;
+    return section;
+  }
+  return null;
+}
+
+function herdrArgs(session) {
+  return session ? ["--session", session] : [];
+}
+
+function listWorkspaces(session = "") {
+  return runJson("herdr", [...herdrArgs(session), "workspace", "list"]);
+}
+
+function listPanes(session = "") {
+  return runJson("herdr", [...herdrArgs(session), "pane", "list"]);
+}
+
+function listAgents(session = "") {
+  return runJson("herdr", [...herdrArgs(session), "agent", "list"]);
+}
+
+function workspacePanes(config, workspaceId) {
+  const panes = listPanes(config.session);
+  if (!panes.ok) return [];
+  return (panes.json?.result?.panes || []).filter((pane) => pane.workspace_id === workspaceId);
+}
+
+function findWorkspaceForProject(config) {
+  const panes = listPanes(config.session);
+  if (!panes.ok) return { workspaceId: null, reason: panes.error };
+  const projectPath = config.projectPath;
+  const label = config.workspaceLabel;
+  const paneRows = panes.json?.result?.panes || [];
+  const byCwd = paneRows.find((pane) => pane.cwd === projectPath || pane.foreground_cwd === projectPath);
+  if (byCwd) return { workspaceId: byCwd.workspace_id, reason: "cwd" };
+  if (label) {
+    const workspaces = listWorkspaces(config.session);
+    if (workspaces.ok) {
+      const match = (workspaces.json?.result?.workspaces || []).find((ws) => ws.label === label);
+      if (match) return { workspaceId: match.workspace_id, reason: "label" };
+    }
+  }
+  return { workspaceId: null, reason: "not_found" };
+}
+
+function isKnownAgentPane(pane) {
+  return typeof pane.agent === "string" && pane.agent.length > 0;
+}
+
+function findShellPane(config, workspaceId) {
+  return workspacePanes(config, workspaceId).find((pane) => !isKnownAgentPane(pane)) || null;
+}
+
+function parsePaneId(payload, fallback) {
+  return payload?.result?.pane?.pane_id
+    || payload?.result?.root_pane?.pane_id
+    || payload?.result?.rootPane?.pane_id
+    || fallback
+    || null;
+}
+
+function agentRunning(agents, label, cwd, workspaceId = null) {
+  const rows = agents.json?.result?.agents || [];
+  return rows.some((agent) => {
+    const nameMatch = agent.agent === label || agent.name === label;
+    const cwdMatch = !cwd || agent.cwd === cwd || agent.foreground_cwd === cwd;
+    const workspaceMatch = !workspaceId || agent.workspace_id === workspaceId;
+    return nameMatch && cwdMatch && workspaceMatch;
+  });
+}
+
+function shellQuote(value) {
+  return `'${String(value).replace(/'/g, `'\\''`)}'`;
+}
+
+function paneRun(config, paneId, command) {
+  const pathPrefix = process.env.PATH
+    ? `export PATH=${shellQuote(process.env.PATH)}; `
+    : "";
+  return run("herdr", [
+    ...herdrArgs(config.session),
+    "pane",
+    "run",
+    paneId,
+    `${pathPrefix}${command}`,
+  ]);
+}
+
+function startAgent(config, name, argv, options = {}) {
+  const args = [
+    ...herdrArgs(config.session),
+    "agent",
+    "start",
+    name,
+    "--cwd",
+    config.projectPath,
+    "--no-focus",
+  ];
+  if (options.workspaceId) args.push("--workspace", options.workspaceId);
+  if (options.split) args.push("--split", options.split);
+  if (process.env.PATH) args.push("--env", `PATH=${process.env.PATH}`);
+  args.push("--", ...argv);
+  return runJson("herdr", args);
+}
+
+function bootstrapProject(config, options = {}) {
+  const actions = [];
+  const warnings = [];
+  let workspaceId = null;
+  let workspaceWasNew = false;
+  const existing = findWorkspaceForProject(config);
+  if (existing.workspaceId) {
+    workspaceId = existing.workspaceId;
+    actions.push({ action: "focus_existing", workspaceId, reason: existing.reason });
+    const focus = run("herdr", [...herdrArgs(config.session), "workspace", "focus", workspaceId]);
+    if (!focus.ok) warnings.push(`workspace focus failed: ${focus.output}`);
+  } else {
+    workspaceWasNew = true;
+    const createArgs = [
+      ...herdrArgs(config.session),
+      "workspace",
+      "create",
+      "--cwd",
+      config.projectPath,
+      "--no-focus",
+    ];
+    if (config.workspaceLabel) createArgs.push("--label", config.workspaceLabel);
+    const created = runJson("herdr", createArgs);
+    if (!created.ok) throw new Error(created.error || "workspace create failed");
+    workspaceId = created.json?.result?.workspace?.workspace_id || null;
+    actions.push({ action: "workspace_created", workspaceId });
+  }
+
+  const rootPaneId = workspaceId ? `${workspaceId}:p1` : null;
+  const agents = listAgents(config.session);
+
+  if (config.primaryAgent) {
+    const argv = resolveAgentArgv(config.primaryAgent);
+    const already = agents.ok && agentRunning(agents, config.primaryAgent, config.projectPath, workspaceId);
+    if (!already) {
+      const started = startAgent(config, config.primaryAgent, argv, { workspaceId });
+      if (!started.ok) warnings.push(`primary agent failed: ${started.error}`);
+      else actions.push({ action: "primary_agent_started", agent: config.primaryAgent });
+    } else {
+      actions.push({ action: "primary_agent_present", agent: config.primaryAgent });
+    }
+  }
+
+  let shellPaneId = rootPaneId;
+  const existingShell = workspaceId ? findShellPane(config, workspaceId) : null;
+  if (existingShell) {
+    shellPaneId = existingShell.pane_id;
+    actions.push({ action: "shell_pane_present", paneId: shellPaneId });
+  } else if (config.shellPane && rootPaneId) {
+    const split = runJson("herdr", [
+      ...herdrArgs(config.session),
+      "pane",
+      "split",
+      rootPaneId,
+      "--direction",
+      config.shellSplit,
+      "--no-focus",
+    ]);
+    shellPaneId = parsePaneId(split.json, null) || shellPaneId;
+    if (split.ok) actions.push({ action: "shell_split", paneId: shellPaneId, direction: config.shellSplit });
+    else warnings.push(`shell split failed: ${split.error}`);
+  }
+
+  for (const agentName of config.secondaryAgents || []) {
+    const argv = resolveAgentArgv(agentName);
+    const already = agents.ok && agentRunning(agents, agentName, config.projectPath, workspaceId);
+    if (already) {
+      actions.push({ action: "secondary_agent_present", agent: agentName });
+      continue;
+    }
+    const started = startAgent(config, agentName, argv, {
+      workspaceId,
+      split: "right",
+    });
+    if (!started.ok) warnings.push(`secondary agent ${agentName} failed: ${started.error}`);
+    else actions.push({ action: "secondary_agent_started", agent: agentName });
+  }
+
+  const shouldRunBootstrap = workspaceWasNew || options.force;
+  for (const tab of config.tabs || []) {
+    if (!shouldRunBootstrap || !tab?.command || !workspaceId) continue;
+    const tabCreate = runJson("herdr", [
+      ...herdrArgs(config.session),
+      "tab",
+      "create",
+      "--workspace",
+      workspaceId,
+      "--no-focus",
+      ...(tab.label ? ["--label", String(tab.label)] : []),
+    ]);
+    const tabPaneId = parsePaneId(tabCreate.json, null);
+    if (!tabCreate.ok || !tabPaneId) {
+      warnings.push(`tab ${tab.label || "extra"} failed`);
+      continue;
+    }
+    const ran = paneRun(config, tabPaneId, String(tab.command));
+    if (!ran.ok) warnings.push(`tab command failed: ${ran.output}`);
+    else actions.push({ action: "tab_bootstrapped", label: tab.label || null, command: tab.command });
+  }
+
+  const bootstrapPane = shellPaneId || rootPaneId;
+  if (shouldRunBootstrap) {
+    for (const command of config.bootstrap || []) {
+      if (!bootstrapPane) break;
+      const ran = paneRun(config, bootstrapPane, command);
+      if (!ran.ok) warnings.push(`bootstrap command failed: ${command}`);
+      else actions.push({ action: "bootstrap_command", command });
+    }
+  } else if ((config.bootstrap || []).length) {
+    actions.push({ action: "bootstrap_skipped", reason: "workspace_already_initialized" });
+  }
+
+  if (workspaceId) {
+    run("herdr", [...herdrArgs(config.session), "workspace", "focus", workspaceId]);
+  }
+
+  if (options.attach && process.env.HERDR_ENV !== "1") {
+    const attach = run("herdr", [...herdrArgs(config.session)]);
+    if (!attach.ok && !attach.output.includes("nested herdr")) warnings.push(`attach: ${attach.output}`);
+    else actions.push({ action: "attach" });
+  }
+
+  return {
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    projectPath: config.projectPath,
+    configPath: config.sourcePath,
+    workspaceId,
+    actions,
+    warnings,
+    readiness: { ready: warnings.length === 0, warnings },
+  };
+}
+
+function scaffoldProject(projectPath, force = false) {
+  const targetDir = join(projectPath, ".dx");
+  const target = join(targetDir, "herdr.toml");
+  if (existsSync(target) && !force) {
+    return { ok: false, path: target, message: "already exists (use --force to overwrite)" };
+  }
+  mkdirSync(targetDir, { recursive: true });
+  const template = existsSync(TEMPLATE_PATH)
+    ? readFileSync(TEMPLATE_PATH, "utf8")
+    : readFileSync(join(DX_DIR, "templates/herdr.project.toml"), "utf8");
+  const projectName = projectPath.split("/").filter(Boolean).pop() || "project";
+  const body = template.replace('workspaceLabel = "my-project"', `workspaceLabel = "${projectName}"`);
+  writeFileSync(target, body, "utf8");
+  return { ok: true, path: target, message: "scaffolded" };
+}
+
+function printHelp() {
+  console.log(`herdr-project <command> [path] [flags]
+
+Commands:
+  bootstrap   Create/focus project workspace and start configured agents
+  discover    Print resolved project Herdr config
+  has-config  Exit 0 when an enabled project profile exists
+  status      Show whether a workspace already exists for the project
+  scaffold    Write .dx/herdr.toml from the DX template
+
+Flags:
+  --json      JSON output
+  --attach    After bootstrap, run herdr attach (when not already inside Herdr)
+  --force     Re-run bootstrap/tab commands on an existing workspace; overwrite on scaffold
+`);
+}
+
+const { flags, command, path: rawPath } = parseArgs(process.argv.slice(2));
+if (flags.help) {
+  printHelp();
+  process.exit(0);
+}
+
+try {
+  const projectPath = resolveProject(rawPath);
+  const config = discoverConfig(projectPath);
+
+  if (command === "has-config") {
+    const ok = Boolean(config?.enabled);
+    if (flags.json) console.log(JSON.stringify({ ok, projectPath, configPath: config?.sourcePath || null }, null, 2));
+    process.exit(ok ? 0 : 1);
+  }
+
+  if (command === "discover") {
+    if (!config) {
+      if (flags.json) console.log(JSON.stringify({ projectPath, config: null }, null, 2));
+      else console.log(`No Herdr project config in ${projectPath}`);
+      process.exit(1);
+    }
+    if (flags.json) console.log(JSON.stringify({ projectPath, config }, null, 2));
+    else {
+      console.log(`Project: ${projectPath}`);
+      console.log(`Config: ${config.sourcePath}`);
+      console.log(`Label: ${config.workspaceLabel || "(auto)"}`);
+      console.log(`Primary: ${config.primaryAgent || "(none)"}`);
+      console.log(`Secondary: ${(config.secondaryAgents || []).join(", ") || "(none)"}`);
+    }
+    process.exit(0);
+  }
+
+  if (command === "status") {
+    if (!config) {
+      const payload = { projectPath, configured: false, workspaceId: null };
+      if (flags.json) console.log(JSON.stringify(payload, null, 2));
+      else console.log("No project Herdr config");
+      process.exit(1);
+    }
+    const match = findWorkspaceForProject({ ...config, projectPath });
+    const payload = {
+      projectPath,
+      configured: true,
+      configPath: config.sourcePath,
+      workspaceId: match.workspaceId,
+      matchReason: match.reason,
+    };
+    if (flags.json) console.log(JSON.stringify(payload, null, 2));
+    else {
+      console.log(`Project: ${projectPath}`);
+      console.log(`Config: ${config.sourcePath}`);
+      console.log(`Workspace: ${match.workspaceId || "(not open)"} (${match.reason})`);
+    }
+    process.exit(0);
+  }
+
+  if (command === "scaffold") {
+    const result = scaffoldProject(projectPath, flags.force);
+    if (flags.json) console.log(JSON.stringify(result, null, 2));
+    else console.log(`${result.message}: ${result.path}`);
+    process.exit(result.ok ? 0 : 1);
+  }
+
+  if (command === "bootstrap") {
+    if (!config?.enabled) {
+      const message = `No enabled Herdr project config in ${projectPath}`;
+      if (flags.json) console.log(JSON.stringify({ ok: false, message }, null, 2));
+      else console.error(message);
+      process.exit(1);
+    }
+    const report = bootstrapProject({ ...config, projectPath }, { attach: flags.attach, force: flags.force });
+    if (flags.json) console.log(JSON.stringify(report, null, 2));
+    else {
+      console.log(`Bootstrapped ${projectPath}`);
+      console.log(`Workspace: ${report.workspaceId || "(unknown)"}`);
+      for (const action of report.actions) console.log(`- ${action.action}`);
+      if (report.warnings.length) console.log(`Warnings: ${report.warnings.join("; ")}`);
+    }
+    process.exit(report.readiness.ready ? 0 : 2);
+  }
+
+  printHelp();
+  process.exit(2);
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  if (flags.json) console.log(JSON.stringify({ ok: false, error: message }, null, 2));
+  else console.error(message);
+  process.exit(1);
+}

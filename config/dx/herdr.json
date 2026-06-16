@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "name": "herdr",
+  "scope": "global",
+  "configPath": "~/.config/dx/herdr.toml",
+  "runtimeDir": "~/.config/herdr",
+  "worktreesDir": "~/.herdr/worktrees",
+  "skillPath": "~/.config/agents/skills/herdr/SKILL.md",
+  "docsPath": "~/.config/dx/herdr.md",
+  "binary": "herdr",
+  "shellModule": "~/.config/shell/herdr.sh",
+  "maintenanceCommand": "herder-maintain",
+  "integrations": {
+    "required": ["codex", "kimi", "hermes", "claude", "cursor"],
+    "optional": ["pi", "opencode", "copilot", "devin", "droid"]
+  },
+  "screenDetectedAgents": ["grok"],
+  "minIntegrationVersions": {
+    "codex": 5,
+    "kimi": 3,
+    "hermes": 2,
+    "claude": 6,
+    "cursor": 1
+  },
+  "spawnWrappers": [
+    "~/.local/bin/herdr-spawn-codex",
+    "~/.local/bin/herdr-spawn-kimi",
+    "~/.local/bin/herdr-spawn-hermes",
+    "~/.local/bin/herdr-spawn-grok",
+    "~/.local/bin/herdr-spawn-claude"
+  ],
+  "agentSkills": [
+    "~/.grok/skills/herdr",
+    "~/.codex/skills/herdr",
+    "~/.claude/skills/herdr"
+  ],
+  "notifications": {
+    "delivery": "system",
+    "terminalNotifier": "terminal-notifier"
+  },
+  "project": {
+    "discovery": [".dx/herdr.toml", "dx.config.toml", ".dx/config.toml", ".config/dx.toml"],
+    "template": "~/.config/dx/templates/herdr.project.toml",
+    "tool": "herdr-project"
+  }
+}

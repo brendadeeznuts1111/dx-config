@@ -1,0 +1,337 @@
+#!/usr/bin/env bun
+import { existsSync, lstatSync, readFileSync, readlinkSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { join } from "node:path";
+import { TOML } from "bun";
+import {
+  MIN_INTEGRATION_VERSIONS,
+  REQUIRED_INTEGRATIONS,
+  SPAWN_AGENTS,
+} from "../../.config/dx/lib/herdr-agents.ts";
+
+const HOME = process.env.HOME || "/Users/nolarose";
+const DX_DIR = join(HOME, ".config/dx");
+const MANIFEST_PATH = join(DX_DIR, "herdr.json");
+const CONFIG_PATH = join(DX_DIR, "herdr.toml");
+const RUNTIME_CONFIG = join(HOME, ".config/herdr/config.toml");
+const SKILL_PATH = join(HOME, ".config/agents/skills/herdr/SKILL.md");
+const SPAWN_DIR = join(HOME, ".local/bin");
+const KNOWN_TOP_LEVEL = new Set([
+  "onboarding", "theme", "terminal", "update", "keys", "ui", "session",
+  "remote", "worktrees", "experimental", "advanced",
+]);
+const DEPRECATED_SECTIONS = {
+  toast: "ui.toast",
+};
+
+function expand(path) {
+  return path.replace(/^~(?=$|\/)/, HOME).replace(/^~\//, `${HOME}/`);
+}
+
+function run(cmd, args = [], timeout = 20_000) {
+  try {
+    return {
+      ok: true,
+      output: execFileSync(cmd, args, {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+        timeout,
+      }).trim(),
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      output: `${error.stdout || ""}${error.stderr || ""}`.trim(),
+    };
+  }
+}
+
+function runJson(cmd, args = []) {
+  const result = run(cmd, args);
+  if (!result.ok) return { ok: false, json: null, output: result.output };
+  try {
+    return { ok: true, json: JSON.parse(result.output), output: result.output };
+  } catch {
+    return { ok: false, json: null, output: result.output };
+  }
+}
+
+function which(command) {
+  const result = run("which", [command]);
+  return result.ok ? result.output : null;
+}
+
+function readJson(path) {
+  try {
+    return JSON.parse(readFileSync(path, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function isSymlinkTo(path, expectedTarget) {
+  try {
+    if (!lstatSync(path).isSymbolicLink()) return false;
+    const target = readlinkSync(path);
+    const resolved = target.startsWith("/") ? target : join(path, "..", target);
+    return resolved === expectedTarget;
+  } catch {
+    return false;
+  }
+}
+
+function parseArgs(argv) {
+  return {
+    json: argv.includes("--json"),
+    fix: argv.includes("--fix"),
+    help: argv.includes("--help") || argv.includes("-h"),
+  };
+}
+
+function scanProjectProfiles() {
+  const projects = readJson(join(DX_DIR, "projects.json"));
+  const rows = [];
+  for (const project of projects?.topProjects || []) {
+    const path = project?.path;
+    if (!path || !existsSync(path)) continue;
+    const result = run("herdr-project", ["has-config", path]);
+    if (result.ok) {
+      const discover = run("herdr-project", ["discover", path, "--json"]);
+      let label = project.key;
+      try {
+        label = JSON.parse(discover.output)?.config?.workspaceLabel || label;
+      } catch {}
+      rows.push({ key: project.key, path, label });
+    }
+  }
+  return rows;
+}
+
+function parseIntegrationVersions(output) {
+  const versions = {};
+  for (const line of output.split(/\r?\n/)) {
+    const match = line.match(/^(\w+):\s+current\s+\(v(\d+)\)/);
+    if (match) versions[match[1]] = Number(match[2]);
+    const missing = line.match(/^(\w+):\s+not installed/);
+    if (missing) versions[missing[1]] = 0;
+  }
+  return versions;
+}
+
+function lintConfig(configPath) {
+  const warnings = [];
+  try {
+    const doc = TOML.parse(readFileSync(configPath, "utf8"));
+    for (const key of Object.keys(doc)) {
+      if (key === "keys.command") continue;
+      if (!KNOWN_TOP_LEVEL.has(key)) {
+        const hint = DEPRECATED_SECTIONS[key];
+        warnings.push(hint ? `unknown section [${key}] — use [${hint}]` : `unknown top-level section [${key}]`);
+      }
+    }
+    const commands = doc["keys.command"];
+    if (Array.isArray(commands)) {
+      for (const entry of commands) {
+        const command = entry?.command;
+        if (typeof command === "string" && !command.includes("herdr-spawn-")) {
+          const bare = command.split("/").pop();
+          if (SPAWN_AGENTS.includes(bare)) {
+            warnings.push(`keys.command uses bare agent name "${command}" — use ~/.local/bin/herdr-spawn-${bare}`);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    warnings.push(`config parse failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  return warnings;
+}
+
+function checkSpawnWrappers() {
+  const missing = [];
+  for (const agent of SPAWN_AGENTS) {
+    const path = join(SPAWN_DIR, `herdr-spawn-${agent}`);
+    if (!existsSync(path)) missing.push(agent);
+  }
+  return missing;
+}
+
+function checkShellModule() {
+  const zshrc = join(HOME, ".zshrc");
+  try {
+    const content = readFileSync(zshrc, "utf8");
+    return content.includes("herdr.sh");
+  } catch {
+    return false;
+  }
+}
+
+function checkManifests(binary) {
+  if (!binary) return { ok: false, stale: [], result: null };
+  const manifests = runJson("herdr", ["server", "agent-manifests", "--json"]);
+  if (!manifests.ok || !manifests.json?.result) {
+    return { ok: false, stale: ["manifest check failed"], result: null };
+  }
+  const result = manifests.json.result;
+  const stale = (result.manifests || [])
+    .filter((entry) => entry.remote_update_result && entry.remote_update_result !== "current")
+    .map((entry) => entry.agent);
+  if (result.last_result && result.last_result !== "checked") stale.push(`last_result:${result.last_result}`);
+  return { ok: stale.length === 0, stale, result };
+}
+
+function parseVersion(versionText) {
+  const match = String(versionText || "").match(/(\d+)\.(\d+)\.(\d+)/);
+  return match ? { major: Number(match[1]), minor: Number(match[2]), patch: Number(match[3]), text: match[0] } : null;
+}
+
+function inspect(options = {}) {
+  const manifest = readJson(MANIFEST_PATH);
+  const blockers = [];
+  const warnings = [];
+  const fixes = [];
+  const binary = which("herdr");
+  const terminalNotifier = which("terminal-notifier");
+  const version = binary ? run("herdr", ["--version"]) : { ok: false, output: "" };
+  const status = binary ? run("herdr", ["status"]) : { ok: false, output: "" };
+  const integrationStatus = binary ? run("herdr", ["integration", "status"]) : { ok: false, output: "" };
+  const configSymlinkOk = isSymlinkTo(RUNTIME_CONFIG, CONFIG_PATH);
+  const configExists = existsSync(CONFIG_PATH);
+  const skillExists = existsSync(SKILL_PATH);
+  const shellModuleExists = existsSync(join(HOME, ".config/shell/herdr.sh"));
+  const shellSourced = checkShellModule();
+  const worktreesDir = expand(manifest?.worktreesDir || "~/.herdr/worktrees");
+  const parsedVersion = parseVersion(version.output);
+
+  if (!binary) blockers.push("herdr binary missing from PATH");
+  if (!configExists) blockers.push(`missing config: ${CONFIG_PATH}`);
+  if (!configSymlinkOk) warnings.push(`runtime config is not symlinked to ${CONFIG_PATH}`);
+  if (!manifest) warnings.push(`missing manifest: ${MANIFEST_PATH}`);
+  if (!skillExists) warnings.push(`missing skill: ${SKILL_PATH}`);
+  if (!shellModuleExists) warnings.push("missing shell module: ~/.config/shell/herdr.sh");
+  if (!shellSourced) warnings.push("~/.zshrc does not source ~/.config/shell/herdr.sh");
+  if (!terminalNotifier) warnings.push("terminal-notifier missing; system notifications may fall back to osascript");
+  if (!existsSync(worktreesDir)) warnings.push(`worktrees directory missing: ${worktreesDir}`);
+
+  const requiredIntegrations = manifest?.integrations?.required || [...REQUIRED_INTEGRATIONS];
+  const integrationVersions = parseIntegrationVersions(integrationStatus.output);
+  const installed = [];
+  const missing = [];
+  const outdated = [];
+  for (const name of requiredIntegrations) {
+    const versionNum = integrationVersions[name];
+    if (!versionNum) {
+      missing.push(name);
+      continue;
+    }
+    installed.push(name);
+    const min = MIN_INTEGRATION_VERSIONS[name] ?? manifest?.minIntegrationVersions?.[name];
+    if (min && versionNum < min) outdated.push(`${name} v${versionNum} < v${min}`);
+  }
+  if (missing.length) warnings.push(`integrations not current: ${missing.join(", ")}`);
+  if (outdated.length) warnings.push(`integrations below minimum for restore: ${outdated.join(", ")}`);
+
+  const manifestStatus = checkManifests(binary);
+  if (!manifestStatus.ok) warnings.push(`agent manifests need attention: ${manifestStatus.stale.join(", ")}`);
+  if (options.fix && binary && !manifestStatus.ok) {
+    const updated = run("herdr", ["server", "update-agent-manifests"]);
+    if (updated.ok) fixes.push("updated agent manifests");
+    else warnings.push(`manifest update failed: ${updated.output}`);
+  }
+
+  const missingWrappers = checkSpawnWrappers();
+  if (missingWrappers.length) warnings.push(`missing spawn wrappers: ${missingWrappers.join(", ")}`);
+
+  warnings.push(...lintConfig(CONFIG_PATH));
+
+  const skillLinks = (manifest?.agentSkills || []).map(expand);
+  const brokenSkillLinks = skillLinks.filter((path) => {
+    try {
+      return !lstatSync(path).isSymbolicLink();
+    } catch {
+      return true;
+    }
+  });
+  if (brokenSkillLinks.length) warnings.push(`agent skill links broken: ${brokenSkillLinks.join(", ")}`);
+
+  const serverRunning = /status:\s*running/.test(status.output);
+  if (binary && !serverRunning) warnings.push("herdr server is not running");
+
+  const projectProfiles = which("herdr-project") ? scanProjectProfiles() : [];
+  if (!which("herdr-project")) warnings.push("herdr-project missing from PATH");
+
+  if (parsedVersion && parsedVersion.major === 0 && parsedVersion.minor < 7) {
+    warnings.push(`herdr ${parsedVersion.text} uses legacy pane ids — upgrade to 0.7.0+ for stable w1:p1 handles`);
+  }
+
+  return {
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    manifest: manifest ? { name: manifest.name, configPath: manifest.configPath } : null,
+    checks: {
+      binary: Boolean(binary),
+      version: version.ok,
+      config: configExists,
+      configSymlink: configSymlinkOk,
+      manifest: Boolean(manifest),
+      skill: skillExists,
+      shellModule: shellModuleExists,
+      shellSourced,
+      terminalNotifier: Boolean(terminalNotifier),
+      integrations: missing.length === 0 && outdated.length === 0,
+      agentManifests: manifestStatus.ok,
+      spawnWrappers: missingWrappers.length === 0,
+      server: serverRunning,
+      projectTool: Boolean(which("herdr-project")),
+    },
+    details: {
+      binary,
+      version: version.output || null,
+      configPath: CONFIG_PATH,
+      runtimeConfigPath: RUNTIME_CONFIG,
+      skillPath: SKILL_PATH,
+      installedIntegrations: installed,
+      missingIntegrations: missing,
+      outdatedIntegrations: outdated,
+      integrationVersions,
+      manifestStatus: manifestStatus.result,
+      serverStatus: status.ok ? status.output : status.output || null,
+      projectProfiles,
+      fixes,
+    },
+    readiness: {
+      ready: blockers.length === 0,
+      blockers,
+      warnings: [...new Set(warnings.filter(Boolean))],
+    },
+  };
+}
+
+function printHuman(report) {
+  console.log("Herdr Doctor");
+  console.log(`Generated: ${report.generatedAt}`);
+  console.log("");
+  for (const [name, ok] of Object.entries(report.checks)) {
+    console.log(`${ok ? "PASS" : "FAIL"} ${name}`);
+  }
+  console.log("");
+  if (report.details.version) console.log(`Version: ${report.details.version}`);
+  if (report.details.binary) console.log(`Binary: ${report.details.binary}`);
+  console.log(`Config: ${report.details.configPath}`);
+  if (report.details.fixes?.length) console.log(`Fixes: ${report.details.fixes.join("; ")}`);
+  console.log("");
+  console.log(`Status: ${report.readiness.ready ? "ready" : "blocked"}`);
+  if (report.readiness.blockers.length) console.log(`Blockers: ${report.readiness.blockers.join("; ")}`);
+  if (report.readiness.warnings.length) console.log(`Warnings: ${report.readiness.warnings.join("; ")}`);
+}
+
+const options = parseArgs(process.argv.slice(2));
+if (options.help) {
+  console.log("herdr-doctor [--json] [--fix]\n\nRead-only Herdr integration health for the DX config hub.\n--fix updates stale agent manifests when the server is running.");
+  process.exit(0);
+}
+
+const report = inspect(options);
+if (options.json) console.log(JSON.stringify(report, null, 2));
+else printHuman(report);
+process.exit(report.readiness.ready ? 0 : 1);

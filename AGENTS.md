@@ -2,6 +2,8 @@
 
 Machine-wide DX and Herdr configuration for this Mac. Dotfiles repo — not a code repo.
 
+Full scope: [SCOPE.md](SCOPE.md).
+
 ## Repo boundary (do not merge with kimi-toolchain)
 
 | | `kimi-toolchain` | `dx-config` |

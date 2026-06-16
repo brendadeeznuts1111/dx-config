@@ -2,6 +2,8 @@
 
 Git source of truth for machine-wide DX and Herdr settings on this Mac.
 
+Scope and boundaries: [SCOPE.md](SCOPE.md). Remote: `git@github.com:brendadeeznuts1111/dx-config.git`.
+
 Runtime paths stay where tools expect them (`~/.config/dx/`, `~/.local/bin/`, etc.). This repo holds the files; `scripts/install.sh` deploys them as symlinks.
 
 ## Config symlink chain

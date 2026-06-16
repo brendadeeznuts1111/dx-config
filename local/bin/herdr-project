@@ -7,14 +7,13 @@ import { resolveAgentArgv } from "../../.config/dx/lib/herdr-agents.ts";
 
 const HOME = process.env.HOME || "/Users/nolarose";
 const DX_DIR = join(HOME, ".config/dx");
-const TEMPLATE_PATH = join(DX_DIR, "templates/herdr.project.toml");
 const PROJECT_CONFIG_NAMES = [
   ".dx/herdr.toml",
   "dx.config.toml",
   ".dx/config.toml",
   ".config/dx.toml",
 ];
-
+const TEMPLATE_PATH = join(DX_DIR, "templates/herdr.project.toml");
 function parseArgs(argv) {
   const args = [...argv];
   const flags = {
@@ -66,6 +65,7 @@ function readToml(path) {
   return TOML.parse(readFileSync(path, "utf8"));
 }
 
+/** Keep in sync with kimi-toolchain/src/lib/herdr-project-config.ts */
 function extractHerdrSection(doc, sourceName = "") {
   if (!doc || typeof doc !== "object") return null;
   let section = doc.herdr;

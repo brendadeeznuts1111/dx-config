@@ -4,7 +4,7 @@
   "scope": "global",
   "configPath": "~/.config/dx/herdr.toml",
   "runtimeDir": "~/.config/herdr",
-  "worktreesDir": "~/.herdr/worktrees",
+  "worktreesDir": "~/Projects/herdr-worktrees",
   "skillPath": "~/.config/agents/skills/herdr/SKILL.md",
   "docsPath": "~/.config/dx/herdr.md",
   "minHerdrVersion": "0.7.0",

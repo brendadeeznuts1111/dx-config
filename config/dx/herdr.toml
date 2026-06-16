@@ -1,7 +1,8 @@
 onboarding = false
 
 [terminal]
-# Login shells on macOS so Homebrew + ~/.zprofile PATH run in new panes
+# shell_mode = "auto" → login shells on macOS (path_helper, Homebrew PATH in new panes)
+# default_shell unset → uses $SHELL (/bin/zsh), then /bin/sh
 shell_mode = "auto"
 new_cwd = "follow"
 
@@ -9,7 +10,7 @@ new_cwd = "follow"
 resume_agents_on_restore = true
 
 [update]
-channel = "stable"
+channel = "preview"
 
 [remote]
 manage_ssh_config = true
@@ -23,7 +24,7 @@ last_pane = "prefix+`"
 [ui]
 show_agent_labels_on_pane_borders = true
 # all = agents from every workspace in sidebar (multi-repo days). Use "current" for focused workspace only.
-agent_panel_scope = "all"
+agent_panel_scope = "current"
 confirm_close = true
 mouse_capture = true
 sidebar_width = 32
@@ -46,7 +47,7 @@ enabled = true
 droid = "off"
 
 [theme]
-name = "solarized"
+name = "tokyo-night-day"
 
 [[keys.command]]
 key = "prefix+alt+c"
@@ -79,7 +80,7 @@ command = "~/.local/bin/herdr-spawn-claude"
 description = "start claude"
 
 [worktrees]
-directory = "~/.herdr/worktrees"
+directory = "~/Projects/herdr-worktrees"
 
 [experimental]
 pane_history = false

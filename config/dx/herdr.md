@@ -1,5 +1,7 @@
 # Herdr — Local DX Configuration & Agent Reference (This Machine)
 
+Canonical upstream docs: [configuration.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/configuration.mdx)
+
 **Purpose**: Opinionated, machine-specific layer on top of upstream Herdr ([herdr.dev/docs](https://herdr.dev/docs/)).
 
 - **Upstream** = canonical behavior, full agent matrix, integrations, session restore rules, `herdr agent` CLI, debugging tools, plugins, and marketplace.

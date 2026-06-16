@@ -2,6 +2,12 @@
 
 Machine-wide DX and Herdr configuration for this Mac.
 
+## Config symlink chain
+
+`~/.config/herdr/config.toml` → `~/.config/dx/herdr.toml` → `~/dx-config/config/dx/herdr.toml`
+
+Do not flatten. The DX middle hop is intentional — see `~/kimi-toolchain/CODE_REFERENCES.md`.
+
 ## Scope
 
 - **This repo**: global Herdr config, spawn wrappers, shell helpers, control skill

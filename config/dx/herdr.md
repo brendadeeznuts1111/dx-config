@@ -2,13 +2,29 @@
 
 Herdr is the global agent terminal multiplexer on this Mac. User-owned settings are versioned in `~/dx-config` and deployed to the DX hub; runtime state stays in `~/.config/herdr/`.
 
+## Config symlink chain
+
+```
+~/.config/herdr/config.toml  →  ~/.config/dx/herdr.toml  →  ~/dx-config/config/dx/herdr.toml
+```
+
+Three layers, three responsibilities:
+
+| Layer | Path | Role |
+|-------|------|------|
+| Herdr | `~/.config/herdr/config.toml` | What Herdr reads |
+| DX | `~/.config/dx/herdr.toml` | What DX tooling reads |
+| Git | `~/dx-config/config/dx/herdr.toml` | Version-controlled source |
+
+**Do not flatten** this chain. The middle hop lets DX (`global-config.json`, `herdr-doctor`, spawn wrappers, `herdr-project`) own `~/.config/dx/` independently of Herdr's canonical path. Documented in `~/kimi-toolchain/CODE_REFERENCES.md`.
+
 ## Layout
 
 | Path | Role |
 |------|------|
-| `~/.config/dx/herdr.toml` | Canonical config (theme, keys, notifications) |
+| `~/.config/dx/herdr.toml` | DX ownership surface (theme, keys, notifications) |
 | `~/.config/dx/herdr.json` | Machine manifest for doctors and agents |
-| `~/.config/herdr/config.toml` | Symlink → `../dx/herdr.toml` |
+| `~/.config/herdr/config.toml` | Symlink → `../dx/herdr.toml` (Herdr's expected path) |
 | `~/.config/herdr/` | Runtime only: socket, logs, `session.json` |
 | `~/.config/shell/herdr.sh` | Shell helpers (`herder`, `herder-remote`, …) |
 | `~/.config/agents/skills/herdr/` | Canonical Herdr control skill |

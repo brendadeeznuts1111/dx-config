@@ -4,6 +4,14 @@ Git source of truth for machine-wide DX and Herdr settings on this Mac.
 
 Runtime paths stay where tools expect them (`~/.config/dx/`, `~/.local/bin/`, etc.). This repo holds the files; `scripts/install.sh` deploys them as symlinks.
 
+## Config symlink chain
+
+```
+~/.config/herdr/config.toml  →  ~/.config/dx/herdr.toml  →  ~/dx-config/config/dx/herdr.toml
+```
+
+Herdr, DX, and git each own one layer. **Do not flatten** — see `~/kimi-toolchain/CODE_REFERENCES.md` (Herdr Config Symlink Chain) for the justification.
+
 ## Layout
 
 ```

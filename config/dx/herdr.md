@@ -388,7 +388,7 @@ Upstream: [persistence-remote → Named sessions](https://herdr.dev/docs/persist
 | Session | Intended workspaces | Attach |
 |---------|---------------------|--------|
 | `dev` | kimi-toolchain, dx-config | `herder-session dev` then `herder ~/kimi-toolchain` |
-| `biz` | factorywager / ledger / f402 / peer | `herder-session biz` |
+| `biz` | factorywager / ledger / f402 | `herder-session biz` |
 | `side` | kimiremote (sports-terminal), bet-ticker | `herder-session side` |
 
 ```sh

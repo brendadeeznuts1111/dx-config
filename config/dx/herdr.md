@@ -12,6 +12,38 @@ This document is the single source of truth for **this machine's** agent wiring,
 
 ---
 
+## Post Phase 2 — Deploy chain (2026-06-16)
+
+**Phase 2 complete:** `herdr-doctor`, `herdr-project`, and `herdr-spawn` are authored in `kimi-toolchain`, not dx-config. This repo keeps TOML/JSON, spawn **stubs** (`herdr-spawn-*`), shell helpers, and the control skill.
+
+**Edit rule:** change executable logic in `~/kimi-toolchain/src/{bin,lib}/herdr-*`; change wiring (keys, manifest, profiles) here.
+
+```
+kimi-toolchain (git)
+  src/bin/herdr-{doctor,project,spawn}.ts
+  src/lib/herdr-{agents,doctor,project-runner,project-config}.ts
+        │
+        │  bun run sync
+        ▼
+~/.kimi-code/tools/*.ts          runtime copies
+~/.kimi-code/lib/herdr-agents.ts
+        │
+        │  bun run install-wrappers  (also invoked by dx-config install.sh)
+        ▼
+~/.local/bin/herdr-{doctor,project,spawn}   bash wrappers → bun run ~/.kimi-code/tools/…
+~/.local/bin/herdr-spawn-{agent}            thin stubs copied from dx-config local/bin/
+        │
+        ▼
+config/dx/herdr.toml [keys.command]  →  spawn agents from panes
+config/shell/herdr.sh                →  herder ~/project bootstrap
+```
+
+**Fresh machine:** clone both repos, then `cd ~/kimi-toolchain && bun run sync && bun run install-wrappers`, then `cd ~/dx-config && ./scripts/install.sh`.
+
+**Do not recreate** `~/.config/dx/lib/herdr-agents.ts` — that path is retired; agent registry lives in kimi-toolchain only.
+
+---
+
 ## Official Herdr vs This Machine's DX Layer
 
 | Topic | Official ([herdr.dev/docs](https://herdr.dev/docs/)) | This DX Layer (`config/dx`) | Notes |
@@ -158,8 +190,10 @@ Local copy: `~/.config/agents/skills/herdr/SKILL.md` (deployed from `config/agen
 | `~/.config/herdr/` | Runtime only: socket, logs, `session.json` |
 | `~/.config/shell/herdr.sh` | Shell helpers (`herder`, `herder-remote`, …) |
 | `~/.config/agents/skills/herdr/` | Canonical Herdr control skill |
-| `~/.kimi-code/lib/herdr-agents.ts` | Synced agent path resolution (source in kimi-toolchain) |
-| `~/.local/bin/herdr-spawn-*` | Keybinding-safe agent launchers |
+| `~/.kimi-code/tools/herdr-*.ts` | Synced CLIs (source in kimi-toolchain `src/bin/`) |
+| `~/.kimi-code/lib/herdr-agents.ts` | Synced agent registry (source in kimi-toolchain `src/lib/`) |
+| `~/.local/bin/herdr-{doctor,project,spawn}` | PATH wrappers → `~/.kimi-code/tools/` |
+| `~/.local/bin/herdr-spawn-*` | Keybinding stubs (copied from dx-config `local/bin/`) |
 
 ## Commands
 

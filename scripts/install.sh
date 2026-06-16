@@ -30,6 +30,16 @@ link_file "$REPO/config/dx/templates/herdr.project.toml" "$HOME/.config/dx/templ
 link_file "$REPO/config/shell/herdr.sh" "$HOME/.config/shell/herdr.sh"
 link_file "$REPO/config/agents/skills/herdr/SKILL.md" "$HOME/.config/agents/skills/herdr/SKILL.md"
 
+# Retired Phase 1 path — remove broken symlink if a prior install left one.
+legacy_agents_lib="$HOME/.config/dx/lib/herdr-agents.ts"
+if [[ -L "$legacy_agents_lib" ]] && [[ ! -e "$legacy_agents_lib" ]]; then
+  rm -f "$legacy_agents_lib"
+  echo "removed broken symlink $legacy_agents_lib"
+fi
+if [[ -d "$HOME/.config/dx/lib" ]] && [[ -z "$(ls -A "$HOME/.config/dx/lib" 2>/dev/null)" ]]; then
+  rmdir "$HOME/.config/dx/lib" 2>/dev/null && echo "removed empty $HOME/.config/dx/lib"
+fi
+
 # Herdr CLIs (doctor, project, spawn) are authored in kimi-toolchain → ~/.local/bin via sync.
 KIMI_TOOLCHAIN="${KIMI_TOOLCHAIN:-$HOME/kimi-toolchain}"
 if [[ -x "$KIMI_TOOLCHAIN/scripts/install-bin-wrappers.sh" ]]; then

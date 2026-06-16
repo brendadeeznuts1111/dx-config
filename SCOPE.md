@@ -44,13 +44,14 @@ Version-control **how tools attach to this machine**. Implement the tools in `ki
 
 | Allowed | Examples |
 |---------|----------|
-| Spawn wrappers | `herdr-spawn`, `herdr-spawn-*` |
+| Spawn stubs | `herdr-spawn-*` (delegate to `herdr-spawn` on PATH) |
 | Small helpers | `herdr-quickref` |
 
+`herdr-doctor`, `herdr-project`, and `herdr-spawn` core binaries are **not** in this repo — see [Herdr CLIs (kimi-toolchain)](#herdr-clis-kimi-toolchain) below.
 
 ### Install (`scripts/install.sh`)
 
-Symlink `config/` → `~/.config/`, copy `local/bin/` → `~/.local/bin/`, link Herdr config chain and skill symlinks.
+Symlink `config/dx/` and shell/skill paths → `~/.config/`, run kimi-toolchain `install-wrappers` for Herdr CLIs, copy thin `local/bin/herdr-spawn-*` + `herdr-quickref`, link Herdr config chain and skill symlinks.
 
 ### This repo's Herdr profile (`.dx/herdr.toml`)
 

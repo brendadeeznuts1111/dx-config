@@ -285,6 +285,18 @@ herdr wait agent-status w1:p1 --status done --timeout 120000
 herdr pane read w1:p1 --source recent --lines 100
 ```
 
+### debug wrong agent state
+
+when a pane shows unexpected `idle`, `working`, or `blocked`, use upstream explain (not integration hooks — codex/claude/cursor state comes from screen manifests):
+
+```bash
+herdr agent list
+herdr agent explain w1:p1
+herdr agent explain w1:p1 --json
+```
+
+explain shows manifest source/version, matched rule, lifecycle-authority skip, and idle-fallback reason. full reference: https://herdr.dev/docs/agents/#detection-manifests
+
 ## notes
 
 - `workspace list`, `workspace create`, `tab list`, `tab create`, `tab get`, `tab focus`, `tab rename`, `tab close`, `pane list`, `pane get`, `pane split`, `wait output`, and `wait agent-status` print json on success.

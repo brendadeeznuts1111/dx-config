@@ -32,7 +32,9 @@
   "agentSkills": [
     "~/.grok/skills/herdr",
     "~/.codex/skills/herdr",
-    "~/.claude/skills/herdr"
+    "~/.claude/skills/herdr",
+    "~/.kimi-code/skills/herdr",
+    "~/.hermes/skills/herdr"
   ],
   "notifications": {
     "delivery": "system",

@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# Quick Herdr orientation — workspaces, panes, keys. Safe outside Herdr too.
+set -euo pipefail
+
+bold() { printf '\033[1m%s\033[0m\n' "$*"; }
+dim()  { printf '\033[2m%s\033[0m\n' "$*"; }
+
+bold "Herdr quick reference (this machine)"
+echo
+
+if [[ "${HERDR_ENV:-}" == "1" ]]; then
+  bold "You are inside Herdr"
+  [[ -n "${HERDR_WORKSPACE_ID:-}" ]] && echo "  workspace: ${HERDR_WORKSPACE_ID}"
+  [[ -n "${HERDR_TAB_ID:-}" ]] && echo "  tab:       ${HERDR_TAB_ID}"
+  [[ -n "${HERDR_PANE_ID:-}" ]] && echo "  pane:      ${HERDR_PANE_ID}"
+  echo
+else
+  dim "Not inside a Herdr pane (HERDR_ENV unset). Run: herder"
+  echo
+fi
+
+if command -v herdr >/dev/null 2>&1 && herdr status 2>/dev/null | grep -q 'running'; then
+  bold "Workspaces"
+  herdr workspace list 2>/dev/null | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+for ws in data.get('result', {}).get('workspaces', []):
+    mark = ' ← focused' if ws.get('focused') else ''
+    print(f\"  {ws['workspace_id']:4} {ws['label']}{mark}  ({ws['pane_count']} panes, {ws['tab_count']} tabs)\")
+" 2>/dev/null || true
+  echo
+  bold "Agents in this session"
+  herdr agent list 2>/dev/null | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+rows = data.get('result', {}).get('agents', [])
+if not rows:
+    print('  (none detected)')
+for a in rows:
+    ws = a.get('workspace_id', '?')
+    name = a.get('agent') or a.get('name', '?')
+    status = a.get('agent_status', '?')
+    cwd = a.get('cwd', '')
+    print(f'  {ws}  {name:8}  {status:8}  {cwd}')
+" 2>/dev/null || true
+  echo
+fi
+
+bold "Enter a project (preferred)"
+echo "  herder ~/dx-config          # dotfiles + Herdr config"
+echo "  herder ~/kimi-toolchain     # toolchain code"
+echo "  herder ~/path/to/repo       # any project with .dx/herdr.toml"
+echo
+
+bold "Spawn agents (prefix = ctrl+b, then alt+…)"
+echo "  alt+c  codex     alt+k  kimi      alt+h  hermes"
+echo "  alt+g  grok      alt+l  claude"
+echo "  cursor: herdr pane run <pane> cursor-agent  (no keybinding)"
+echo
+
+bold "Navigate"
+echo "  prefix+g   workspace picker    prefix+c   new tab"
+echo "  prefix+v   split right       prefix+-   split down"
+echo "  prefix+q   detach (keeps running)"
+echo
+
+bold "Learn more"
+echo "  herdr-quickref              # this summary"
+echo "  less ~/.config/dx/herdr.md  # full machine reference"
+echo "  herdr agent explain <pane>  # debug wrong agent state"
+dim "Docs: https://herdr.dev/docs/"

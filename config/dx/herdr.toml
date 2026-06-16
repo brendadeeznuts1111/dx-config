@@ -22,7 +22,7 @@ last_pane = "prefix+`"
 
 [ui]
 show_agent_labels_on_pane_borders = true
-agent_panel_scope = "all"
+agent_panel_scope = "current"
 confirm_close = true
 mouse_capture = true
 sidebar_width = 32
@@ -70,6 +70,12 @@ key = "prefix+alt+g"
 type = "pane"
 command = "~/.local/bin/herdr-spawn-grok"
 description = "start grok (screen-detected)"
+
+[[keys.command]]
+key = "prefix+alt+l"
+type = "pane"
+command = "~/.local/bin/herdr-spawn-claude"
+description = "start claude"
 
 [worktrees]
 directory = "~/.herdr/worktrees"

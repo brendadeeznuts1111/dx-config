@@ -52,7 +52,12 @@ if [[ ! -L "$HOME/.config/herdr/config.toml" ]]; then
   echo "linked $HOME/.config/herdr/config.toml -> ../dx/herdr.toml"
 fi
 
-for agent_home in "$HOME/.grok/skills" "$HOME/.codex/skills" "$HOME/.claude/skills"; do
+for agent_home in \
+  "$HOME/.grok/skills" \
+  "$HOME/.codex/skills" \
+  "$HOME/.claude/skills" \
+  "$HOME/.kimi-code/skills" \
+  "$HOME/.hermes/skills"; do
   mkdir -p "$agent_home"
   link_file "$HOME/.config/agents/skills/herdr" "$agent_home/herdr"
 done

@@ -1,9 +1,17 @@
 schemaVersion = 1
 enabled = true
-workspaceLabel = "dx"
+workspaceLabel = "dx-config"
+primaryAgent = "grok"
+secondaryAgents = ["claude"]
 shellPane = true
 shellSplit = "right"
 bootstrap = [
   "herdr-doctor",
+  "git status -sb",
+  "herdr-quickref",
   "dx context 2>/dev/null || true",
 ]
+
+[[tabs]]
+label = "shell"
+command = "herdr-quickref"

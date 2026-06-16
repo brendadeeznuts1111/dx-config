@@ -8,12 +8,14 @@ shellPane = true
 shellSplit = "right"
 bootstrap = [
   "dx config --project .",
+  "git status -sb",
+  "herdr-quickref",
 ]
 
 # Optional named session (empty = default)
 # session = "work"
 
 # Optional extra tabs with shell commands
-# [[herdr.tabs]]
-# label = "logs"
-# command = "bun run dev"
+[[herdr.tabs]]
+label = "shell"
+command = "herdr-quickref"

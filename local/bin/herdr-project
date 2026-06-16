@@ -183,16 +183,46 @@ function shellQuote(value) {
   return `'${String(value).replace(/'/g, `'\\''`)}'`;
 }
 
-function paneRun(config, paneId, command) {
-  const pathPrefix = process.env.PATH
-    ? `export PATH=${shellQuote(process.env.PATH)}; `
-    : "";
+function resolvePanePath() {
+  const parts = [];
+  const seen = new Set();
+  const add = (value) => {
+    for (const entry of String(value || "").split(":")) {
+      if (!entry || seen.has(entry)) continue;
+      seen.add(entry);
+      parts.push(entry);
+    }
+  };
+  add(process.env.PATH);
+  const home = process.env.HOME || "";
+  for (const segment of [
+    `${home}/.local/bin`,
+    `${home}/.kimi-code/bin`,
+    `${home}/.bun/bin`,
+    `${home}/bin`,
+    "/opt/homebrew/bin",
+    "/usr/local/bin",
+  ]) {
+    add(segment);
+  }
+  return parts.join(":");
+}
+
+function paneRun(config, paneId, command, options = {}) {
+  let payload = command;
+  if (!options.skipPathPrefix) {
+    const path = resolvePanePath();
+    if (path) {
+      const escapedPath = path.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+      payload = `export PATH="${escapedPath}"; ${command}`;
+    }
+  }
   return run("herdr", [
     ...herdrArgs(config.session),
     "pane",
     "run",
     paneId,
-    `${pathPrefix}${command}`,
+    `sh -lc ${shellQuote(payload)}`,
   ]);
 }
 
@@ -208,7 +238,8 @@ function startAgent(config, name, argv, options = {}) {
   ];
   if (options.workspaceId) args.push("--workspace", options.workspaceId);
   if (options.split) args.push("--split", options.split);
-  if (process.env.PATH) args.push("--env", `PATH=${process.env.PATH}`);
+  const panePath = resolvePanePath();
+  if (panePath) args.push("--env", `PATH=${panePath}`);
   args.push("--", ...argv);
   return runJson("herdr", args);
 }
@@ -315,11 +346,14 @@ function bootstrapProject(config, options = {}) {
 
   const bootstrapPane = shellPaneId || rootPaneId;
   if (shouldRunBootstrap) {
-    for (const command of config.bootstrap || []) {
-      if (!bootstrapPane) break;
-      const ran = paneRun(config, bootstrapPane, command);
-      if (!ran.ok) warnings.push(`bootstrap command failed: ${command}`);
-      else actions.push({ action: "bootstrap_command", command });
+    const commands = (config.bootstrap || []).filter((item) => typeof item === "string" && item.length);
+    if (bootstrapPane && commands.length) {
+      const script = commands.join(" && ");
+      const ran = paneRun(config, bootstrapPane, script);
+      if (!ran.ok) warnings.push(`bootstrap failed: ${ran.output || script}`);
+      else {
+        for (const command of commands) actions.push({ action: "bootstrap_command", command });
+      }
     }
   } else if ((config.bootstrap || []).length) {
     actions.push({ action: "bootstrap_skipped", reason: "workspace_already_initialized" });

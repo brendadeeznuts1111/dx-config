@@ -61,3 +61,7 @@ herder-maintain() {
 herder-project() {
   command herdr-project "$@"
 }
+
+herder-quickref() {
+  command herdr-quickref "$@"
+}

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "topProjects": [
+    {
+      "key": "kimi-toolchain",
+      "path": "~/kimi-toolchain"
+    },
+    {
+      "key": "dx-config",
+      "path": "~/dx-config"
+    }
+  ]
+}

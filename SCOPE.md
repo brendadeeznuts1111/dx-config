@@ -70,7 +70,7 @@ dx-config is also a Herdr project (dotfiles workspace). Profile lives here becau
 | Integration hooks | Installed by `herdr integration install` into agent homes |
 | Kimi MCP, sessions, `config.toml` | `~/.kimi-code/` runtime |
 | Application source | Their own project repos |
-| `projects.json` (machine discovery) | `~/.config/dx/` — optional template only |
+| `projects.json` (machine discovery) | Template: `config/dx/templates/projects.json` → `~/.config/dx/projects.json` on first install |
 
 ---
 

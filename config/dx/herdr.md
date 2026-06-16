@@ -334,7 +334,7 @@ Templates (machine):
 
 | Repo type | Template | Live reference |
 |-----------|----------|----------------|
-| **Code / toolchain** | `~/.config/dx/templates/herdr.project.toml` | `~/kimi-toolchain/dx.config.toml` `[herdr]` + `dx/workspace.toml` |
+| **Code / toolchain** | `~/.config/dx/templates/herdr.project.toml` | `~/kimi-toolchain/dx.config.toml` `[herdr]` |
 | **Config / dotfiles** | `~/.config/dx/templates/herdr.project.config.toml` | `~/dx-config/.dx/herdr.toml` |
 
 Toolchain code repos should prefer `kimi-fix <path> --profile toolchain` over hand-copying — see `~/kimi-toolchain/TEMPLATES.md` (scaffold profiles + migration). Effect gates in code repos: **`kimi-doctor --effect-gates`** (not `bun run doctor`, not `herdr-doctor`).

@@ -1,7 +1,7 @@
 # Code repo profile — copy to .dx/herdr.toml or add [herdr] to dx.config.toml
 #
 # Toolchain-native repos: run `kimi-fix <path> --profile toolchain` instead of hand-copying.
-# That adds [finishWork], [herdr], dx/workspace.toml, and finish-work scripts — see
+# That adds [finishWork], [herdr], and finish-work scripts — see
 # ~/kimi-toolchain/TEMPLATES.md (Migrating to toolchain profile).
 #
 # Syntax: flat .dx/herdr.toml uses [[tabs]] below; nested dx.config.toml uses [[herdr.tabs]].

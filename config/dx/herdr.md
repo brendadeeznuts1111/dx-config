@@ -488,21 +488,27 @@ Use `~/.config/herdr/agent-detection/<agent>.toml` only for **upstream screen-ma
 
 ### Illustrative override (schema evolves via remote updates)
 
+Local override = **full file replacement**; start from the cached remote copy (`~/.local/state/herdr/agent-detection/remote/<agent>.toml`), then patch `[[rules]]`.
+
 ```toml
 # ~/.config/herdr/agent-detection/grok.toml
-[agent]
-name = "grok"
-detection = [
-  { process = "grok", cmdline_contains = ["--role"] },
-]
+# Full replacement — copy remote grok.toml, then patch rules.
+id = "grok"
+version = "2026.06.10.1"
+min_engine_version = 1
 
-[labels]
-environment = "dev"
+[[rules]]
+id = "custom_working_spinner"
+state = "working"
+priority = 130
+region = "whole_recent"
+visible_working = true
+contains = ["your-new-grok-ui-string-here"]
 ```
 
-> Keys like `[labels]` and `health_check` are examples — exact schema evolves via remote manifest updates. Herdr ignores invalid keys with a warning.
+Rule keys (`region`, `contains`, `any`, `all`, `line_regex`, `visible_working`, `visible_blocker`, …) evolve via remote manifest updates. Invalid override files are ignored with a warning — Herdr falls back to cached remote or bundled.
 
-Grok already has a remote manifest (`~/.local/state/herdr/agent-detection/remote/grok.toml`, v2026.06.10.1). Only add a local override if `herdr agent explain wN:pN` shows detection mismatches on your specific Grok Build UI strings.
+Grok remote baseline: `~/.local/state/herdr/agent-detection/remote/grok.toml` (v2026.06.10.1). Only add a local override if `herdr agent explain wN:pN` shows detection mismatches on your Grok Build UI strings.
 
 ## Debugging Wrong Agent State
 

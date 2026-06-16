@@ -1,6 +1,6 @@
 # Herdr — Local DX Configuration & Agent Reference (This Machine)
 
-Canonical upstream docs ([`website/src/content/docs/`](https://github.com/ogulcancelik/herdr/tree/master/website/src/content/docs)):
+Canonical upstream docs ([`website/src/content/docs/`](https://github.com/ogulcancelik/herdr/tree/master/website/src/content/docs) — **not** `src/content/docs/`, which 404s on GitHub):
 
 - [configuration.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/configuration.mdx)
 - [session-state.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/session-state.mdx)
@@ -238,6 +238,7 @@ herder-agents               # list detected agents
 herder-stop                 # stop server and panes
 herder-edit-config          # edit dx/herdr.toml and reload
 herder-maintain             # brew upgrade + manifest refresh + doctor
+herder-session [name]       # list or attach named session (dev / biz / side)
 herdr-doctor                # integration health check
 herdr-doctor --json
 herdr-doctor --fix          # refresh stale agent manifests
@@ -258,6 +259,56 @@ herdr-quickref              # workspaces, agents, key cheats (also: herder-quick
 | Start codex / kimi / hermes / grok / claude | `alt+c` / `alt+k` / `alt+h` / `alt+g` / `alt+l` |
 
 Agent keybindings use `~/.local/bin/herdr-spawn-*` wrappers so binaries resolve from login-shell PATH inside Herdr panes.
+
+## How to work (this machine)
+
+Canonical upstream: [how-to-work.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/how-to-work.mdx) ([rendered](https://herdr.dev/docs/how-to-work/)). Herdr is a **background session server** plus terminal **clients**. Panes keep running in the server; clients attach, detach, and render. You do not manage sockets manually.
+
+### Which path to use
+
+| Situation | Command (this machine) | Where server runs |
+|-----------|------------------------|-------------------|
+| Daily local dev | `herder` or `herder ~/kimi-toolchain` | This Mac (default or named session) |
+| Isolate workspace groups | `herder-session dev` then `herder ~/…` | This Mac — separate named server |
+| Already in SSH on remote box | `ssh workbox` → `herdr` | Remote — tmux-style; shell is remote |
+| Phone / tablet SSH | `ssh you@server` → `herdr` | Remote — no Herdr mobile app needed |
+| Remote session, local feel | `herder-remote workbox` | Remote server; **local** thin-client UI |
+| Remote named session | `herder-remote workbox --session work` | Remote — see [Persistence and remote access](#persistence-and-remote-access) |
+
+**Prefer `herder ~/path`** over `cd ~/path && herdr` when the repo has `[herdr]` / `.dx/herdr.toml` — `herdr-project bootstrap` creates or focuses the workspace and runs bootstrap commands.
+
+### Local work
+
+```sh
+herder                      # attach default session
+herder ~/kimi-toolchain     # bootstrap + attach project workspace
+prefix+q                    # detach client — panes keep running
+herder                      # reattach
+herdr server stop           # end session and stop panes (unlike detach)
+```
+
+Named sessions: `herder-session dev` attaches a separate server; see [Named sessions](#named-sessions-this-machine).
+
+### Remote work — SSH first (simple)
+
+```sh
+ssh workbox
+herdr                       # server and agents run on workbox
+prefix+q                    # detach; disconnect SSH; SSH back and herdr again
+```
+
+Use when you already live in SSH, use a phone client (e.g. moshi on iPhone), or want the simplest setup. Herdr TUI adapts to narrow screens. No local clipboard image bridge.
+
+### Remote work — thin client (local terminal)
+
+```sh
+herder-remote workbox
+herder-remote ssh://you@server:2222
+```
+
+Local Herdr connects over SSH, starts or attaches the **remote** server, streams UI locally. Local keybindings by default (snapshot at attach — reattach after editing `herdr.toml` keys). Image clipboard paste can bridge to a remote temp file. Requires `Host workbox` in `~/.ssh/config` (not configured on this Mac yet).
+
+Deeper remote topics (handoff, binary install, `HERDR_REMOTE_BINARY`, direct attach): [Persistence and remote access](#persistence-and-remote-access) and [persistence-remote](https://herdr.dev/docs/persistence-remote/).
 
 ## Session state and restore
 
@@ -315,17 +366,50 @@ Canonical upstream: [persistence-remote.mdx](https://github.com/ogulcancelik/her
 
 | Workflow | Command | Notes |
 |----------|---------|-------|
-| Detach client | `prefix+q` (`ctrl+b q`) | Server + panes keep running |
-| Reattach | `herder` or `herdr` | Default session |
-| Stop server + panes | `herdr server stop` | Full stop — unlike detach |
-| Named sessions | `herdr session list` / `attach` / `stop` / `delete` | Independent servers; shared global config |
-| Remote thin client | `herder-remote workbox` | Local UI over SSH; local keybindings snapshot at attach time |
-| Remote named session | `herdr --remote workbox --session agents` | |
-| Remote live handoff | `herdr --remote workbox --handoff` | Experimental; Homebrew local install still upgrades via brew |
+| Detach client | `prefix+q` (`ctrl+b q`) | Server + panes keep running — strongest persistence path |
+| Reattach | `herder` or `herdr` | Reattaches to **default** session unless you used `session attach` |
+| Stop server + panes | `herdr server stop` | Full stop — unlike detach; snapshot restore on next start ([session-state](https://herdr.dev/docs/session-state/)) |
+| Named session attach | `herder-session dev` | Wrapper → `herdr session attach <name>`; creates server if missing |
+| Named session admin | `herdr session list` / `stop` / `delete` | Each name = separate socket + runtime dir; **shared** `~/.config/dx/herdr.toml` |
+| Remote thin client | `herder-remote workbox` | Local UI over SSH; **local** keybindings snapshot at attach time |
+| Remote keybindings | `herder-remote workbox --remote-keybindings server` | Use remote server config instead |
+| Remote named session | `herder-remote workbox --session work` | Named session on the **remote** host |
+| Remote live handoff | `herder-remote workbox --handoff` | Experimental; default remote attach restarts remote server normally |
 | Direct agent attach | `herdr agent attach reviewer` | One terminal, not full UI; `prefix+q` detach |
+| Direct terminal attach | `herdr terminal attach <term_id>` | Non-agent pane; `--takeover` if another client owns input |
 | Debug escape hatch | `herdr --no-session` | No background server — rarely needed |
 
-Remote attach: `[remote] manage_ssh_config = true` (see global prefs). `HERDR_REMOTE_BINARY` overrides binary copied to remote for local/custom builds.
+### Named sessions (this machine)
+
+Upstream: [persistence-remote → Named sessions](https://herdr.dev/docs/persistence-remote/#named-sessions). A named session is an **independent Herdr server** — its own workspaces, tabs, panes, socket, and `session.json`. Global config (`config/dx/herdr.toml`) is shared; **workspaces are not**. There is no “move workspace” API — bootstrap repos again in the target session, then close stale workspaces in the old one.
+
+**Proposed split** (not yet migrated — default still holds kimi-toolchain, dx-config, and validation worktrees):
+
+| Session | Intended workspaces | Attach |
+|---------|---------------------|--------|
+| `dev` | kimi-toolchain, dx-config | `herder-session dev` then `herder ~/kimi-toolchain` |
+| `biz` | factorywager / ledger / f402 / peer | `herder-session biz` |
+| `side` | kimiremote (sports-terminal), bet-ticker | `herder-session side` |
+
+```sh
+herdr session list --json
+herder-session dev                    # attach or start named server
+herdr session stop dev                # stop that server + its panes
+herdr session delete side-project   # remove named session data
+```
+
+**Grok test-agent tabs** do not gain persistence from named sessions. Detach keeps them running; **any** server stop (including `session stop`, `herder-maintain`, remote attach without `--handoff`) kills grok panes. Recovery: `herdr-project reconcile <path> --apply --force-layout`. Kimi/codex/claude panes may resume via native integration restore — see [Session state and restore](#session-state-and-restore).
+
+### Remote attach (when `workbox` exists in `~/.ssh/config`)
+
+Two modes ([how-to-work](https://herdr.dev/docs/how-to-work/)):
+
+1. **SSH in, run Herdr on server** — `ssh workbox` then `herdr`. Simple; no local clipboard bridge beyond text.
+2. **Thin client** — `herder-remote workbox` from this Mac. Local keybindings by default; image clipboard paste bridged to remote temp file.
+
+Remote binary resolution: matching `herdr` on remote `PATH` → `~/.local/bin/herdr` → interactive install prompt (non-interactive fails). Homebrew/mise/Nix or platform mismatch downloads from `https://herdr.dev/latest.json`. Custom local build: `HERDR_REMOTE_BINARY=… herder-remote workbox`.
+
+Remote attach: `[remote] manage_ssh_config = true` (see global prefs) — Herdr merges your `~/.ssh/config` first, then keepalive fallback; set `manage_ssh_config = false` for plain `ssh`. `HERDR_REMOTE_BINARY` overrides binary copied to remote for local/custom builds.
 
 ## Detection Manifests
 

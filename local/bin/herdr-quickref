@@ -52,6 +52,13 @@ for a in rows:
   echo
 fi
 
+bold "How to work (pick one path)"
+echo "  Local:     herder ~/kimi-toolchain     # bootstrap + attach"
+echo "  Named:     herder-session dev          # separate server, then herder ~/…"
+echo "  SSH:       ssh HOST → herdr            # remote server (phone-friendly)"
+echo "  Thin:      herder-remote workbox       # local UI, remote server"
+echo
+
 bold "Enter a project (preferred)"
 echo "  herder ~/dx-config          # dotfiles + Herdr config"
 echo "  herder ~/kimi-toolchain     # toolchain code"
@@ -68,6 +75,13 @@ bold "Navigate"
 echo "  prefix+g   workspace picker    prefix+c   new tab"
 echo "  prefix+v   split right       prefix+-   split down"
 echo "  prefix+q   detach (keeps running)"
+echo
+
+bold "Named sessions (separate Herdr servers)"
+echo "  herder-session              # list sessions"
+echo "  herder-session dev          # attach dev (shared config, own workspaces)"
+echo "  herdr session stop dev      # stop that server + panes"
+echo "  herder-remote HOST --session work   # remote named session"
 echo
 
 bold "Project layout (kimi-toolchain CLIs)"
@@ -93,4 +107,4 @@ bold "Learn more"
 echo "  herdr-quickref              # this summary"
 echo "  less ~/.config/dx/herdr.md  # full machine reference"
 echo "  herdr agent explain <pane>  # debug wrong agent state"
-dim "Docs: https://herdr.dev/docs/  agents: …/agents/  session: …/session-state/  remote: …/persistence-remote/"
+dim "Docs: …/how-to-work/  …/persistence-remote/  …/session-state/  …/agents/"

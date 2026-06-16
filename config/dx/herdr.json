@@ -17,6 +17,7 @@
     "agentsSource": "https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/agents.mdx",
     "howToWork": "https://herdr.dev/docs/how-to-work/",
     "howToWorkSource": "https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/how-to-work.mdx",
+    "howToWorkEdit": "https://github.com/ogulcancelik/herdr/edit/master/website/src/content/docs/how-to-work.mdx",
     "configuration": "https://herdr.dev/docs/configuration/",
     "configurationSource": "https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/configuration.mdx",
     "integrations": "https://herdr.dev/docs/integrations/",
@@ -25,6 +26,7 @@
     "sessionState": "https://herdr.dev/docs/session-state/",
     "sessionStateSource": "https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/session-state.mdx",
     "upstreamDocsDir": "https://github.com/ogulcancelik/herdr/tree/master/website/src/content/docs",
+    "upstreamDocsEditDir": "https://github.com/ogulcancelik/herdr/edit/master/website/src/content/docs",
     "agentSkill": "https://herdr.dev/docs/agent-skill/"
   },
   "binary": "herdr",

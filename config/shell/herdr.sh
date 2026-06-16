@@ -38,6 +38,16 @@ herder-remote() {
   command herdr --remote "$@"
 }
 
+# Named Herdr server — independent workspaces/socket; shared ~/.config/dx/herdr.toml
+# https://herdr.dev/docs/persistence-remote/#named-sessions
+herder-session() {
+  if [[ $# -eq 0 ]]; then
+    command herdr session list
+    return
+  fi
+  command herdr session attach "$@"
+}
+
 herder-edit-config() {
   "${EDITOR:-nano}" "$DX_HERDR_CONFIG"
   command herdr server reload-config

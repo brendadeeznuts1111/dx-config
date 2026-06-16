@@ -441,7 +441,7 @@ The **test** tab uses `grok --role test-agent` so Grok runs as a first-class Her
 | Long-running test watcher | `grok --role test-agent --cwd . -- bun run scripts/test-agent.ts --watch` | Agent semantics + status reporting |
 | Doctor / shell / quickref | `kimi-doctor --quick`, `git status -sb; herdr-quickref` | Operational shells, not agents |
 
-`herdr-project` today starts extra tabs via `pane run` on the tab `command`. Commands that begin with `grok --role` should eventually route through `herdr agent start` + `agent rename` + optional `report-agent` during reconcile/bootstrap (tracked in kimi-toolchain `herdr-project-reconcile`). Until that lands, the v2 command string is still the **authoritative profile default** — reconcile will catch up.
+`herdr-project` routes `grok --role` tab commands through `herdr agent start` + `agent rename` + `report-agent` during bootstrap and reconcile (`src/lib/herdr-role-tab.ts`). Plain commands still use `pane run`.
 
 **Default v2 tab block** (Bun app; adjust or drop tabs your repo does not need):
 

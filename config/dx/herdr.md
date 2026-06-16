@@ -330,20 +330,36 @@ Per-repo Herdr layout — same discovery order as `dx config`:
 2. `[herdr]` in `dx.config.toml`
 3. `.dx/config.toml` / `.config/dx.toml`
 
-Template: `~/.config/dx/templates/herdr.project.toml`
+Templates (machine):
+
+| Repo type | Template | Live reference |
+|-----------|----------|----------------|
+| **Code / toolchain** | `~/.config/dx/templates/herdr.project.toml` | `~/kimi-toolchain/dx.config.toml` `[herdr]` + `dx/workspace.toml` |
+| **Config / dotfiles** | `~/.config/dx/templates/herdr.project.config.toml` | `~/dx-config/.dx/herdr.toml` |
+
+Toolchain code repos should prefer `kimi-fix <path> --profile toolchain` over hand-copying — see `~/kimi-toolchain/TEMPLATES.md` (scaffold profiles + migration). Effect gates in code repos: **`kimi-doctor --effect-gates`** (not `bun run doctor`, not `herdr-doctor`).
+
+**Syntax:** flat `.dx/herdr.toml` uses `[[tabs]]`; nested `dx.config.toml` uses `[[herdr.tabs]]`.
+
+Config repo example (flat `.dx/herdr.toml`):
 
 ```toml
-[herdr]
+schemaVersion = 1
 enabled = true
-workspaceLabel = "my-app"
-primaryAgent = "kimi"
-secondaryAgents = ["codex"]
+workspaceLabel = "dx-config"
+primaryAgent = "grok"
+secondaryAgents = ["claude"]
 shellPane = true
-bootstrap = ["dx config --project .", "git status -sb", "herdr-quickref"]
+shellSplit = "right"
+bootstrap = ["herdr-doctor", "git status -sb", "herdr-quickref", "dx context 2>/dev/null || true"]
 
-[[herdr.tabs]]
+[[tabs]]
+label = "doctor"
+command = "herdr-doctor 2>/dev/null || true"
+
+[[tabs]]
 label = "shell"
-command = "herdr-quickref"
+command = "git status -sb; herdr-quickref"
 ```
 
 ```sh

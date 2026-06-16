@@ -43,6 +43,7 @@
   "project": {
     "discovery": [".dx/herdr.toml", "dx.config.toml", ".dx/config.toml", ".config/dx.toml"],
     "template": "~/.config/dx/templates/herdr.project.toml",
+    "configTemplate": "~/.config/dx/templates/herdr.project.config.toml",
     "tool": "herdr-project"
   }
 }

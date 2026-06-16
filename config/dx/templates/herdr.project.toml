@@ -1,4 +1,11 @@
-# Project Herdr profile — copy to .dx/herdr.toml or add [herdr] to dx.config.toml
+# Code repo profile — copy to .dx/herdr.toml or add [herdr] to dx.config.toml
+#
+# Toolchain-native repos: run `kimi-fix <path> --profile toolchain` instead of hand-copying.
+# That adds [finishWork], [herdr], dx/workspace.toml, and finish-work scripts — see
+# ~/kimi-toolchain/TEMPLATES.md (Migrating to toolchain profile).
+#
+# Syntax: flat .dx/herdr.toml uses [[tabs]] below; nested dx.config.toml uses [[herdr.tabs]].
+# Effect gates (code repos): kimi-doctor --effect-gates in [finishWork] / prePush — not herdr-doctor.
 schemaVersion = 1
 enabled = true
 workspaceLabel = "my-project"
@@ -12,14 +19,10 @@ bootstrap = [
   "bun run check:fast && echo '✅ Ready to commit'",
 ]
 
-# Optional named session (empty = default)
-# session = "work"
-
-# Mirror dx/workspace.toml tabs — see kimi-toolchain dx/workspace.toml
-[[herdr.tabs]]
+[[tabs]]
 label = "doctor"
 command = "kimi-doctor --quick 2>/dev/null || true"
 
-[[herdr.tabs]]
+[[tabs]]
 label = "shell"
 command = "git status -sb; herdr-quickref"

@@ -28,7 +28,8 @@ Version-control **how tools attach to this machine**. Implement the tools in `ki
 | `herdr.json` | `~/.config/dx/herdr.json` | Machine manifest (integrations, wrappers, skills) |
 | `herdr.md` | `~/.config/dx/herdr.md` | Agent matrix, workspace model, this Mac's reference |
 
-| `templates/herdr.project.toml` | `~/.config/dx/templates/` | Scaffold for other repos' profiles |
+| `templates/herdr.project.toml` | `~/.config/dx/templates/` | Code-repo Herdr profile scaffold |
+| `templates/herdr.project.config.toml` | `~/.config/dx/templates/` | Config/dotfiles repo profile scaffold |
 
 ### Shell helpers (`config/shell/`)
 
@@ -56,7 +57,7 @@ Symlink `config/dx/` and shell/skill paths → `~/.config/`, run kimi-toolchain 
 
 ### This repo's Herdr profile (`.dx/herdr.toml`)
 
-dx-config is also a Herdr project (dotfiles workspace). Profile lives here because there is no `dx.config.toml` in a config-only repo.
+dx-config is also a Herdr project (dotfiles workspace). Profile lives in `.dx/herdr.toml` because there is no `dx.config.toml` in a config-only repo. Tabs mirror the toolchain pattern (doctor + shell); bootstrap uses `herdr-doctor` not `kimi-doctor`. No `finish-work` — that belongs in toolchain-profile code repos (`~/kimi-toolchain/TEMPLATES.md`).
 
 ---
 

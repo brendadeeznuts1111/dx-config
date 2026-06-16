@@ -1,6 +1,9 @@
+# Config/dotfiles repo profile — copy to .dx/herdr.toml
+# Reference: dx-config .dx/herdr.toml. No finish-work (not a Bun toolchain project).
+# Flat files use [[tabs]]; nested dx.config.toml profiles use [[herdr.tabs]].
 schemaVersion = 1
 enabled = true
-workspaceLabel = "dx-config"
+workspaceLabel = "my-config-repo"
 primaryAgent = "grok"
 secondaryAgents = ["claude"]
 shellPane = true
@@ -12,7 +15,6 @@ bootstrap = [
   "dx context 2>/dev/null || true",
 ]
 
-# Flat .dx/herdr.toml uses [[tabs]] — dx.config.toml nested profiles use [[herdr.tabs]]
 [[tabs]]
 label = "doctor"
 command = "herdr-doctor 2>/dev/null || true"

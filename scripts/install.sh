@@ -27,6 +27,7 @@ link_file "$REPO/config/dx/herdr.toml" "$HOME/.config/dx/herdr.toml"
 link_file "$REPO/config/dx/herdr.json" "$HOME/.config/dx/herdr.json"
 link_file "$REPO/config/dx/herdr.md" "$HOME/.config/dx/herdr.md"
 link_file "$REPO/config/dx/templates/herdr.project.toml" "$HOME/.config/dx/templates/herdr.project.toml"
+link_file "$REPO/config/dx/templates/herdr.project.config.toml" "$HOME/.config/dx/templates/herdr.project.config.toml"
 link_file "$REPO/config/dx/templates/projects.json" "$HOME/.config/dx/templates/projects.json"
 projects_dest="$HOME/.config/dx/projects.json"
 if [[ ! -e "$projects_dest" ]] && [[ -f "$REPO/config/dx/templates/projects.json" ]]; then

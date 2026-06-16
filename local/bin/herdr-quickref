@@ -70,8 +70,22 @@ echo "  prefix+v   split right       prefix+-   split down"
 echo "  prefix+q   detach (keeps running)"
 echo
 
+bold "Project layout (kimi-toolchain CLIs)"
+echo "  herdr-project discover <path>           # resolved [herdr] profile"
+echo "  herdr-project reconcile <path>          # dry-run layout drift"
+echo "  herdr-project reconcile <path> --apply  # heal missing tabs/agents"
+echo "  herdr-project bootstrap <path>          # create/focus workspace"
+echo
+
+bold "Pane automation (socket API via CLI)"
+echo "  herdr pane run <pane> \"<cmd>\"           # run command in pane"
+echo "  herdr pane read <pane> --source recent  # scrollback"
+echo "  herdr pane report-agent <pane> --source ID --agent LABEL --state idle|working|blocked"
+echo "  herdr wait agent-status <pane> --status done"
+echo
+
 bold "Learn more"
 echo "  herdr-quickref              # this summary"
 echo "  less ~/.config/dx/herdr.md  # full machine reference"
 echo "  herdr agent explain <pane>  # debug wrong agent state"
-dim "Docs: https://herdr.dev/docs/"
+dim "Docs: https://herdr.dev/docs/  CLI: https://herdr.dev/docs/cli-reference/  API: https://herdr.dev/docs/socket-api/"

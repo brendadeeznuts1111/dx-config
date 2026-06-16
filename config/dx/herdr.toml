@@ -22,6 +22,7 @@ last_pane = "prefix+`"
 
 [ui]
 show_agent_labels_on_pane_borders = true
+# all = agents from every workspace in sidebar (multi-repo days). Use "current" for focused workspace only.
 agent_panel_scope = "all"
 confirm_close = true
 mouse_capture = true

@@ -7,6 +7,17 @@
   "worktreesDir": "~/.herdr/worktrees",
   "skillPath": "~/.config/agents/skills/herdr/SKILL.md",
   "docsPath": "~/.config/dx/herdr.md",
+  "minHerdrVersion": "0.7.0",
+  "socketPath": "~/.config/herdr/herdr.sock",
+  "docs": {
+    "home": "https://herdr.dev/docs/",
+    "socketApi": "https://herdr.dev/docs/socket-api/",
+    "cliReference": "https://herdr.dev/docs/cli-reference/",
+    "agents": "https://herdr.dev/docs/agents/",
+    "integrations": "https://herdr.dev/docs/integrations/",
+    "sessionState": "https://herdr.dev/docs/session-state/",
+    "agentSkill": "https://herdr.dev/docs/agent-skill/"
+  },
   "binary": "herdr",
   "shellModule": "~/.config/shell/herdr.sh",
   "maintenanceCommand": "herder-maintain",

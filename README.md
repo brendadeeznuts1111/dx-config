@@ -69,6 +69,7 @@ Machine reference: `config/dx/herdr.md` (deployed to `~/.config/dx/herdr.md`). C
 | Overview | [herdr.dev/docs](https://herdr.dev/docs/) | — |
 | Configuration | [configuration](https://herdr.dev/docs/configuration/) | [configuration.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/configuration.mdx) |
 | Agents & state authority | [agents](https://herdr.dev/docs/agents/) | [agents.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/agents.mdx) |
+| How to work with Herdr | [how-to-work](https://herdr.dev/docs/how-to-work/) | [how-to-work.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/how-to-work.mdx) |
 | Persistence & remote | [persistence-remote](https://herdr.dev/docs/persistence-remote/) | [persistence-remote.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/persistence-remote.mdx) |
 | Session state & restore | [session-state](https://herdr.dev/docs/session-state/) | [session-state.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/session-state.mdx) |
 | Socket API | [socket-api](https://herdr.dev/docs/socket-api/) | — |

@@ -80,12 +80,17 @@ echo
 bold "Pane automation (socket API via CLI)"
 echo "  herdr pane run <pane> \"<cmd>\"           # run command in pane"
 echo "  herdr pane read <pane> --source recent  # scrollback"
-echo "  herdr pane report-agent <pane> --source ID --agent LABEL --state idle|working|blocked"
-echo "  herdr wait agent-status <pane> --status done"
+echo "  herdr pane report-agent <pane> --state idle|working|blocked  # not done — use --custom-status"
+echo "  herdr wait agent-status <pane> --status done|idle|working|blocked"
+echo
+
+bold "Project test tab (grok --role)"
+echo "  Profile: grok --role test-agent --cwd . -- bun run scripts/test-agent.ts --watch"
+echo "  After server restart: herdr-project reconcile <path> --apply --force-layout"
 echo
 
 bold "Learn more"
 echo "  herdr-quickref              # this summary"
 echo "  less ~/.config/dx/herdr.md  # full machine reference"
 echo "  herdr agent explain <pane>  # debug wrong agent state"
-dim "Docs: https://herdr.dev/docs/  CLI: https://herdr.dev/docs/cli-reference/  API: https://herdr.dev/docs/socket-api/"
+dim "Docs: https://herdr.dev/docs/  agents: …/agents/  session: …/session-state/  remote: …/persistence-remote/"

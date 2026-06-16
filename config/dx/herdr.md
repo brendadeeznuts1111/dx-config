@@ -6,6 +6,7 @@ Canonical upstream docs ([`website/src/content/docs/`](https://github.com/ogulca
 - [session-state.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/session-state.mdx)
 - [persistence-remote.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/persistence-remote.mdx)
 - [agents.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/agents.mdx)
+- [how-to-work.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/how-to-work.mdx)
 
 **Purpose**: Opinionated, machine-specific layer on top of upstream Herdr ([herdr.dev/docs](https://herdr.dev/docs/)).
 
@@ -104,6 +105,7 @@ Upstream pages (source → rendered):
 | Persistence & remote | [persistence-remote.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/persistence-remote.mdx) | [herdr.dev/docs/persistence-remote](https://herdr.dev/docs/persistence-remote/) |
 | Session state & restore | [session-state.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/session-state.mdx) | [herdr.dev/docs/session-state](https://herdr.dev/docs/session-state/) |
 | Integrations | — | [herdr.dev/docs/integrations](https://herdr.dev/docs/integrations/) |
+| How to work with Herdr | [how-to-work.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/how-to-work.mdx) | [herdr.dev/docs/how-to-work](https://herdr.dev/docs/how-to-work/) |
 | CLI automation | — | [herdr.dev/docs/socket-api](https://herdr.dev/docs/socket-api/) |
 | Agent onboarding | — | [herdr.dev/agent-guide.md](https://herdr.dev/agent-guide.md) |
 | Upstream control skill | [SKILL.md](https://github.com/ogulcancelik/herdr/blob/master/SKILL.md) | — |
@@ -291,7 +293,13 @@ Canonical upstream: [session-state.mdx](https://github.com/ogulcancelik/herdr/bl
 | codex | v5 | `codex resume <id>` | current (v5) |
 | claude | v6 | `claude --resume <id>` | current (v6) |
 | cursor | v1 | `cursor-agent --resume <id>` | current (v1) |
-| grok | — | — | Screen manifest only; no native session restore |
+| grok | — | — | Screen manifest only; integration role **none** — no native session restore |
+
+**Grok `grok --role` project tabs** (e.g. test watcher) also restore as plain shells after server restart. Reconcile to respawn:
+
+```sh
+herdr-project reconcile ~/kimi-toolchain --apply --force-layout
+```
 
 Stale, missing, or unsupported session refs restore as shells in the saved pane directory. Reinstall with `herdr integration install <agent>` when doctor flags version drift.
 
@@ -303,7 +311,7 @@ Workspaces, tabs, and panes use stable handles: `w1`, `w1:t1`, `w1:p1` (v0.7.0+)
 
 ## Persistence and remote access
 
-Canonical upstream: [persistence-remote.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/persistence-remote.mdx) ([rendered](https://herdr.dev/docs/persistence-remote/)). For survival matrix after server stop, see [Session state and restore](#session-state-and-restore).
+Canonical upstream: [persistence-remote.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/persistence-remote.mdx) ([rendered](https://herdr.dev/docs/persistence-remote/)). Local vs SSH vs `herdr --remote` workflows: [how-to-work](https://herdr.dev/docs/how-to-work/). For survival matrix after server stop, see [Session state and restore](#session-state-and-restore).
 
 | Workflow | Command | Notes |
 |----------|---------|-------|
@@ -429,9 +437,11 @@ The **test** tab uses `grok --role test-agent` so Grok runs as a first-class Her
 | Benefit | Practice |
 |---------|----------|
 | Agent semantics | Pane appears in `herdr agent list`; supports `wait agent-status`, `agent attach`, `agent send` |
-| Sidebar observability | `pane report-agent --custom-status` works (e.g. "running tests", "3 failing") |
+| Sidebar observability | `pane report-agent --custom-status` works (e.g. "running tests", "passed", "failed") |
 | Orchestrator reactivity | `watch-events` can react to test agent `pane.agent_status_changed` alongside `effect.gates.changed` |
 | Stack consistency | Same pattern as `kimi`, `finish-work-reviewer`, and other named agents |
+
+**`report-agent` vs sidebar `agent_status`:** `pane report-agent --state` accepts `idle`, `working`, `blocked`, or `unknown` only — not `done`. Use `--custom-status` for display text (e.g. `passed`, `3 failing`). The sidebar may still expose `agent_status: done` (finished but unread) for rollups and `wait agent-status --status done`; that is separate from what integrations and scripts report via `report-agent`.
 
 **When to use `grok --role` vs plain `command`:**
 
@@ -441,7 +451,14 @@ The **test** tab uses `grok --role test-agent` so Grok runs as a first-class Her
 | Long-running test watcher | `grok --role test-agent --cwd . -- bun run scripts/test-agent.ts --watch` | Agent semantics + status reporting |
 | Doctor / shell / quickref | `kimi-doctor --quick`, `git status -sb; herdr-quickref` | Operational shells, not agents |
 
-`herdr-project` routes `grok --role` tab commands through `herdr agent start` + `agent rename` + `report-agent` during bootstrap and reconcile (`src/lib/herdr-role-tab.ts`). Plain commands still use `pane run`.
+`herdr-project` routes `grok --role` tab commands during bootstrap and reconcile (`src/lib/herdr-role-tab.ts`):
+
+| Layout state | CLI path | Why |
+|--------------|----------|-----|
+| Pane already exists (`layout.apply`, `create_tab`) | `pane run <payload>` → `agent rename` → `report-agent` | `layout.apply` leaves a shell pane — run the **payload only** (`bun run scripts/test-agent.ts --watch`), not full `grok --role …` argv; avoids orphan panes |
+| No pane yet | `agent start grok --role …` → `agent rename` → `report-agent` | Upstream path when Herdr must spawn the agent target |
+
+Plain tab commands still use `pane run`. After a Herdr server restart, grok role tabs reopen as shells — run `herdr-project reconcile <path> --apply --force-layout` to heal.
 
 **Default v2 tab block** (Bun app; adjust or drop tabs your repo does not need):
 

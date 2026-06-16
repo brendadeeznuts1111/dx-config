@@ -37,7 +37,9 @@ if you need the raw protocol or full api reference, read the [socket api docs](h
 
 - `agent_status` — `idle`, `working`, `blocked`, `done`, `unknown`
 
-`done` means the agent finished, but you have not looked at that finished pane yet.
+`done` is a sidebar rollup state: the agent finished, but you have not looked at that finished pane yet. `herdr wait agent-status --status done` waits on this rollup.
+
+**reporting custom state** (`pane report-agent`) is different: `--state` must be `idle`, `working`, `blocked`, or `unknown` — not `done`. use `--custom-status` for display text (e.g. `passed`, `indexing`). `state` drives waits, notifications, and rollups; `custom-status` is display only.
 
 plain shells still exist as panes, but herdr's sidebar agent section intentionally focuses on detected agents rather than listing every shell.
 

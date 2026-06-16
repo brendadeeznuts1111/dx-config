@@ -15,6 +15,8 @@
     "cliReference": "https://herdr.dev/docs/cli-reference/",
     "agents": "https://herdr.dev/docs/agents/",
     "agentsSource": "https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/agents.mdx",
+    "howToWork": "https://herdr.dev/docs/how-to-work/",
+    "howToWorkSource": "https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/how-to-work.mdx",
     "configuration": "https://herdr.dev/docs/configuration/",
     "configurationSource": "https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/configuration.mdx",
     "integrations": "https://herdr.dev/docs/integrations/",

@@ -35,7 +35,14 @@ label = "check"
 command = "bun run check:fast"
 
 # Grok as first-class agent target — sidebar observability, wait agent-status, orchestrator react.
-# Requires scripts/test-agent.ts in the repo (kimi-toolchain scaffolds on --profile toolchain).
+# Upstream: Grok CLI = screen manifest only, integration role none — no native session restore
+#   (https://herdr.dev/docs/agents/). After Herdr server restart, reconcile to respawn:
+#   herdr-project reconcile . --apply --force-layout
+# herdr-project dual-path (kimi-toolchain herdr-role-tab.ts):
+#   layout pane exists → pane run <payload> + agent rename + report-agent
+#   no pane → agent start grok --role … + rename + report-agent
+# report-agent --state: idle | working | blocked | unknown (not done); use --custom-status for pass/fail.
+# Requires scripts/test-agent.ts — copy from ~/kimi-toolchain/scripts/test-agent.ts or write your own watcher.
 [[tabs]]
 label = "test"
 command = "grok --role test-agent --cwd . -- bun run scripts/test-agent.ts --watch"

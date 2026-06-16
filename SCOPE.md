@@ -28,7 +28,7 @@ Version-control **how tools attach to this machine**. Implement the tools in `ki
 | `herdr.json` | `~/.config/dx/herdr.json` | Machine manifest (integrations, wrappers, skills) |
 | `herdr.md` | `~/.config/dx/herdr.md` | Agent matrix, workspace model, this Mac's reference |
 
-| `templates/herdr.project.toml` | `~/.config/dx/templates/` | Code-repo Herdr profile scaffold |
+| `templates/herdr.project.toml` | `~/.config/dx/templates/` | Code-repo Herdr profile scaffold (v2 — `grok --role` test tab, Alternative A) |
 | `templates/herdr.project.config.toml` | `~/.config/dx/templates/` | Config/dotfiles repo profile scaffold |
 
 ### Shell helpers (`config/shell/`)

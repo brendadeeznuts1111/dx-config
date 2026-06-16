@@ -56,7 +56,7 @@ herdr-doctor
 
 ## Project profiles
 
-Per-repo Herdr layout lives in each project's `dx.config.toml` `[herdr]` block (e.g. `~/kimi-toolchain/dx.config.toml`), not in this global repo.
+Per-repo Herdr layout lives in each project's `dx.config.toml` `[herdr]` block (e.g. `~/kimi-toolchain/dx.config.toml`), not in this global repo. New code repos: start from `config/dx/templates/herdr.project.toml` (scaffold v2 — test tab uses `grok --role`; see `config/dx/herdr.md`).
 
 Toolchain repos: `kimi-fix <path> --profile toolchain` scaffolds `[herdr]` + finish-work scripts from `~/kimi-toolchain/templates/scaffold/` (not this repo).
 

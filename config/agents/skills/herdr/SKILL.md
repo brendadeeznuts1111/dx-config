@@ -31,6 +31,8 @@ if you need the raw protocol or full api reference, read the [socket api docs](h
 
 **panes** are terminal splits inside a tab. each pane runs its own process — a shell, an agent, a server, anything.
 
+**project tab commands** — long-running test watchers on this machine use `grok --role <name> --cwd . -- <cmd>` in the project profile so the pane gets agent semantics (`herdr agent list`, `report-agent`, orchestrator react). plain `bun run …` tabs stay shell panes. see `~/.config/dx/herdr.md` (scaffold v2 — alternative a).
+
 **agent status** is detected automatically by herdr. the api exposes one public field for it:
 
 - `agent_status` — `idle`, `working`, `blocked`, `done`, `unknown`

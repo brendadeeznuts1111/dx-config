@@ -420,6 +420,51 @@ Toolchain code repos should prefer `kimi-fix <path> --profile toolchain` over ha
 
 **Syntax:** flat `.dx/herdr.toml` uses `[[tabs]]`; nested `dx.config.toml` uses `[[herdr.tabs]]`.
 
+### Code repo scaffold v2 — Alternative A locked in
+
+**Status:** default for new Bun code repos on this machine (2026-06-16). Source: `config/dx/templates/herdr.project.toml` (`schemaVersion = 2`).
+
+The **test** tab uses `grok --role test-agent` so Grok runs as a first-class Herdr agent — not a plain shell command. **Alternative B** (shell wrapper around test output) is **disabled**; do not use it in new profiles.
+
+| Benefit | Practice |
+|---------|----------|
+| Agent semantics | Pane appears in `herdr agent list`; supports `wait agent-status`, `agent attach`, `agent send` |
+| Sidebar observability | `pane report-agent --custom-status` works (e.g. "running tests", "3 failing") |
+| Orchestrator reactivity | `watch-events` can react to test agent `pane.agent_status_changed` alongside `effect.gates.changed` |
+| Stack consistency | Same pattern as `kimi`, `finish-work-reviewer`, and other named agents |
+
+**When to use `grok --role` vs plain `command`:**
+
+| Tab kind | Command pattern | Why |
+|----------|-----------------|-----|
+| Dev server / REPL / one-shot check | `bun run dev`, `bun repl`, `bun run check:fast` | No agent lifecycle — `pane run` is correct |
+| Long-running test watcher | `grok --role test-agent --cwd . -- bun run scripts/test-agent.ts --watch` | Agent semantics + status reporting |
+| Doctor / shell / quickref | `kimi-doctor --quick`, `git status -sb; herdr-quickref` | Operational shells, not agents |
+
+`herdr-project` today starts extra tabs via `pane run` on the tab `command`. Commands that begin with `grok --role` should eventually route through `herdr agent start` + `agent rename` + optional `report-agent` during reconcile/bootstrap (tracked in kimi-toolchain `herdr-project-reconcile`). Until that lands, the v2 command string is still the **authoritative profile default** — reconcile will catch up.
+
+**Default v2 tab block** (Bun app; adjust or drop tabs your repo does not need):
+
+```toml
+[[tabs]]
+label = "dev"
+command = "bun run dev"
+
+[[tabs]]
+label = "check"
+command = "bun run check:fast"
+
+[[tabs]]
+label = "test"
+command = "grok --role test-agent --cwd . -- bun run scripts/test-agent.ts --watch"
+
+[[tabs]]
+label = "repl"
+command = "bun repl"
+```
+
+Add `doctor` + `shell` ops tabs from the template for daily-driver layout. Toolchain repos (`kimi-fix --profile toolchain`) also get `reviewer` + `[finishWork]` — see `~/kimi-toolchain/TEMPLATES.md` and [finish-work close-loop](https://github.com/brendadeeznuts1111/kimi-toolchain/blob/main/docs/finish-work-close-loop.md).
+
 Config repo example (flat `.dx/herdr.toml`):
 
 ```toml

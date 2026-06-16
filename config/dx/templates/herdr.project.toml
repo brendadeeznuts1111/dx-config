@@ -1,12 +1,17 @@
 # Code repo profile — copy to .dx/herdr.toml or add [herdr] to dx.config.toml
 #
-# Toolchain-native repos: run `kimi-fix <path> --profile toolchain` instead of hand-copying.
-# That adds [finishWork], [herdr], and finish-work scripts — see
-# ~/kimi-toolchain/TEMPLATES.md (Migrating to toolchain profile).
+# Scaffold v2 — Alternative A locked in (2026-06-16)
+# Test tab uses `grok --role` for first-class Herdr agent semantics (not a shell wrapper).
+# Hex palette (Herdr theme): #0F1419 bg, #FF6B00 accent, #22C55E pass, #EF4444 fail
+#
+# Toolchain-native repos: prefer `kimi-fix <path> --profile toolchain` — adds [finishWork],
+# orchestrator, reviewer tab, and finish-work scripts. See ~/kimi-toolchain/TEMPLATES.md.
 #
 # Syntax: flat .dx/herdr.toml uses [[tabs]] below; nested dx.config.toml uses [[herdr.tabs]].
+# Tab rows use `label` (required by herdr-project); `name` is optional alias — same value is fine.
+#
 # Effect gates (code repos): kimi-doctor --effect-gates in [finishWork] / prePush — not herdr-doctor.
-schemaVersion = 1
+schemaVersion = 2
 enabled = true
 workspaceLabel = "my-project"
 primaryAgent = "kimi"
@@ -18,6 +23,28 @@ bootstrap = [
   "echo 'Finish work: bun run finish-work --message \"...\"'",
   "bun run check:fast && echo '✅ Ready to commit'",
 ]
+
+# ── Dev workflow tabs (scaffold v2) ─────────────────────────────────────────
+
+[[tabs]]
+label = "dev"
+command = "bun run dev"
+
+[[tabs]]
+label = "check"
+command = "bun run check:fast"
+
+# Grok as first-class agent target — sidebar observability, wait agent-status, orchestrator react.
+# Requires scripts/test-agent.ts in the repo (kimi-toolchain scaffolds on --profile toolchain).
+[[tabs]]
+label = "test"
+command = "grok --role test-agent --cwd . -- bun run scripts/test-agent.ts --watch"
+
+[[tabs]]
+label = "repl"
+command = "bun repl"
+
+# ── Ops tabs ────────────────────────────────────────────────────────────────
 
 [[tabs]]
 label = "doctor"

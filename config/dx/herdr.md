@@ -480,6 +480,30 @@ Local overrides (optional) **always win** over remote/bundled:
 
 Without a local override, Herdr uses the newer compatible manifest between cached remote and bundled. Remote manifests patch rules for known agents only — new agent types still need a binary update. After editing a local override: `herdr server reload-agent-manifests` or restart. See [agents.mdx → Detection manifests](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/agents.mdx).
 
+### When to use local overrides
+
+Use `~/.config/herdr/agent-detection/<agent>.toml` only for **upstream screen-manifest agents** (grok, codex, claude, kimi) when `herdr agent explain` shows `default_known_agent_idle_fallback` or mismatched UI strings.
+
+**Do not use for toolchain scripts** — `test-agent`, `finish-work`, and `reviewer-pane` report their own state via `report-agent` and are authoritative.
+
+### Illustrative override (schema evolves via remote updates)
+
+```toml
+# ~/.config/herdr/agent-detection/grok.toml
+[agent]
+name = "grok"
+detection = [
+  { process = "grok", cmdline_contains = ["--role"] },
+]
+
+[labels]
+environment = "dev"
+```
+
+> Keys like `[labels]` and `health_check` are examples — exact schema evolves via remote manifest updates. Herdr ignores invalid keys with a warning.
+
+Grok already has a remote manifest (`~/.local/state/herdr/agent-detection/remote/grok.toml`, v2026.06.10.1). Only add a local override if `herdr agent explain wN:pN` shows detection mismatches on your specific Grok Build UI strings.
+
 ## Debugging Wrong Agent State
 
 When a pane shows unexpected `idle`, `working`, or `blocked`:

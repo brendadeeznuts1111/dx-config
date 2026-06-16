@@ -1,0 +1,9 @@
+schemaVersion = 1
+enabled = true
+workspaceLabel = "dx"
+shellPane = true
+shellSplit = "right"
+bootstrap = [
+  "herdr-doctor",
+  "dx context 2>/dev/null || true",
+]

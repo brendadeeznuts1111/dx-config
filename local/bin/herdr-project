@@ -66,9 +66,23 @@ function readToml(path) {
   return TOML.parse(readFileSync(path, "utf8"));
 }
 
-function extractHerdrSection(doc) {
+function extractHerdrSection(doc, sourceName = "") {
   if (!doc || typeof doc !== "object") return null;
-  const section = doc.herdr;
+  let section = doc.herdr;
+  const isProjectOnlyProfile =
+    sourceName === ".dx/herdr.toml" ||
+    sourceName.endsWith("/.dx/herdr.toml");
+  if (
+    (!section || typeof section !== "object") &&
+    isProjectOnlyProfile &&
+    doc.enabled !== false &&
+    (doc.workspaceLabel != null ||
+      doc.primaryAgent != null ||
+      doc.shellPane != null ||
+      Array.isArray(doc.bootstrap))
+  ) {
+    section = doc;
+  }
   if (!section || typeof section !== "object") return null;
   return {
     schemaVersion: section.schemaVersion ?? doc.schemaVersion ?? 1,
@@ -90,7 +104,7 @@ function discoverConfig(projectPath) {
     const candidate = join(projectPath, name);
     if (!existsSync(candidate)) continue;
     const doc = readToml(candidate);
-    const section = extractHerdrSection(doc);
+    const section = extractHerdrSection(doc, name);
     if (!section) continue;
     section.sourcePath = candidate;
     section.projectPath = projectPath;

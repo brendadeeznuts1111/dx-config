@@ -36,6 +36,7 @@ if [[ ! -e "$projects_dest" ]] && [[ -f "$REPO/config/dx/templates/projects.json
 fi
 link_file "$REPO/config/shell/herdr.sh" "$HOME/.config/shell/herdr.sh"
 link_file "$REPO/config/agents/skills/herdr/SKILL.md" "$HOME/.config/agents/skills/herdr/SKILL.md"
+link_file "$REPO/config/agents/skills/orchestrator/SKILL.md" "$HOME/.config/agents/skills/orchestrator/SKILL.md"
 
 # Retired Phase 1 path — remove broken symlink if a prior install left one.
 legacy_agents_lib="$HOME/.config/dx/lib/herdr-agents.ts"
@@ -94,6 +95,7 @@ for agent_home in \
   "$HOME/.hermes/skills"; do
   mkdir -p "$agent_home"
   link_file "$HOME/.config/agents/skills/herdr" "$agent_home/herdr"
+  link_file "$HOME/.config/agents/skills/orchestrator" "$agent_home/orchestrator"
 done
 
 if command -v herdr >/dev/null 2>&1; then

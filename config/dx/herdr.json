@@ -47,6 +47,14 @@
     "~/.kimi-code/skills/herdr",
     "~/.hermes/skills/herdr"
   ],
+  "orchestratorSkill": "~/.config/agents/skills/orchestrator/SKILL.md",
+  "orchestratorSkills": [
+    "~/.grok/skills/orchestrator",
+    "~/.codex/skills/orchestrator",
+    "~/.claude/skills/orchestrator",
+    "~/.kimi-code/skills/orchestrator",
+    "~/.hermes/skills/orchestrator"
+  ],
   "notifications": {
     "delivery": "system",
     "terminalNotifier": "terminal-notifier"

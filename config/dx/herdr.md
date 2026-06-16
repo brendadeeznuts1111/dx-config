@@ -310,6 +310,59 @@ Local Herdr connects over SSH, starts or attaches the **remote** server, streams
 
 Deeper remote topics (handoff, binary install, `HERDR_REMOTE_BINARY`, direct attach): [Persistence and remote access](#persistence-and-remote-access) and [persistence-remote](https://herdr.dev/docs/persistence-remote/).
 
+## Bootstrap sequence (kimi-toolchain)
+
+What `herder ~/kimi-toolchain` runs via `herdr-project bootstrap` on a **new** workspace (existing workspace: focus only; tabs/agents skipped unless `--force`):
+
+1. **Workspace** — `herdr workspace create --cwd ~/kimi-toolchain --label kimi-toolchain` (or focus if already open)
+
+2. **Agents tab** — root tab `wN:p1`, three panes (`[herdr.agentsTab]`):
+   - `kimi` (primary) — `herdr agent start kimi`
+   - `shell` (split right) — empty shell; chained bootstrap commands run here
+   - `codex` (secondary, split right) — `herdr agent start codex`
+
+3. **Extra tabs** — created only when `[[herdr.tabs]]` has a `command`:
+   - `doctor` → `kimi-doctor --watch`
+   - `shell` → `git status -sb; herdr-quickref`
+   - `test` → `grok --role test-agent --cwd . -- bun run scripts/test-agent.ts --watch`
+   - `reviewer` — **skipped at bootstrap** (no `command` in profile)
+
+4. **Shell pane bootstrap** — one chained `pane run` (`cmd1 && cmd2 && …`):
+
+   ```sh
+   dx config --project .
+   echo '[kimi-toolchain] Available commands:'
+   # … help echoes for check:fast, effect-gates, finish-work …
+   bun run check:fast && echo '✅ Ready to commit'
+   herdr-orchestrator watch-events . >/tmp/herdr-orchestrator-events.log 2>&1 &
+   ```
+
+5. **Context sync** — `syncAgentsTabContext()` after bootstrap (not in the shell chain above):
+   - Runs `kimi-doctor --workspace-context --brief --write-context-files` as a subprocess in the project dir
+   - Delivers output via `herdr agent send` to **kimi + codex** panes (`agentsTab.panes[].context`)
+   - Writes drop to `/tmp/workspace-context.md` (or `HERDR_CONTEXT_FILE`)
+
+6. **Focus** — workspace focused; client attaches when `herder` runs outside Herdr
+
+### Reviewer tab semantics
+
+`[[herdr.tabs]] label = "reviewer"` with **no `command`** — intentional.
+
+| Path | Behavior |
+|------|----------|
+| `bootstrap` | Skipped (`!tab?.command` guard) |
+| `reconcile --apply` | Creates empty placeholder tab if missing |
+| `finish-work` | `herdr tab create` + `pane run scripts/reviewer-pane.ts` when post-push tree is dirty |
+
+Orchestrator references `reviewerTab = "reviewer"` in `dx.config.toml` `[herdr.orchestrator]`. See [finish-work close-loop](https://github.com/brendadeeznuts1111/kimi-toolchain/blob/main/docs/finish-work-close-loop.md).
+
+### dx-config differences
+
+- No `agentsTab` — legacy `primaryAgent` (`grok`) + `secondaryAgents` (`claude`) on the root tab
+- No `syncAgentsTabContext` (no `agentsTab.panes[].context`)
+- Extra tabs: `doctor`, `shell` only
+- Bootstrap: `herdr-doctor`, `git status -sb`, `herdr-quickref`, `dx context`
+
 ## Session state and restore
 
 Canonical upstream: [session-state.mdx](https://github.com/ogulcancelik/herdr/blob/master/website/src/content/docs/session-state.mdx) ([rendered](https://herdr.dev/docs/session-state/)). Herdr has five persistence paths; they solve different problems.

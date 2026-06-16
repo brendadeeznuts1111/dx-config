@@ -27,7 +27,7 @@ Version-control **how tools attach to this machine**. Implement the tools in `ki
 | `herdr.toml` | `~/.config/dx/herdr.toml` | Theme, keys, spawn keybindings, UI |
 | `herdr.json` | `~/.config/dx/herdr.json` | Machine manifest (integrations, wrappers, skills) |
 | `herdr.md` | `~/.config/dx/herdr.md` | Agent matrix, workspace model, this Mac's reference |
-| `lib/herdr-agents.ts` | `~/.config/dx/lib/herdr-agents.ts` | Agent names, min integration versions *(migrate out)* |
+
 | `templates/herdr.project.toml` | `~/.config/dx/templates/` | Scaffold for other repos' profiles |
 
 ### Shell helpers (`config/shell/`)
@@ -46,7 +46,7 @@ Version-control **how tools attach to this machine**. Implement the tools in `ki
 |---------|----------|
 | Spawn wrappers | `herdr-spawn`, `herdr-spawn-*` |
 | Small helpers | `herdr-quickref` |
-| **Transitional** *(migrate out)* | `herdr-doctor`, `herdr-project` |
+
 
 ### Install (`scripts/install.sh`)
 
@@ -108,59 +108,9 @@ Full reference: `config/dx/herdr.md`
 
 ---
 
-## Technical debt (transitional)
+## Herdr CLIs (kimi-toolchain)
 
-These violate "thin config + stubs only" but remain here until migrated to `kimi-toolchain`:
-
-| File | Why it should move |
-|------|-------------------|
-| `local/bin/herdr-doctor` | Doctor implementation |
-| `local/bin/herdr-project` | Bootstrap / workspace orchestration |
-| `local/bin/herdr-spawn` | Shared spawn resolver (could stay as thin stub) |
-| `config/dx/lib/herdr-agents.ts` | Shared types and PATH resolution |
-
-`AGENTS.md` documents this as a known exception.
-
----
-
-## Migration handoff (herdr tools → kimi-toolchain)
-
-**Goal:** Author logic in kimi-toolchain; dx-config keeps TOML/JSON/shell/skill + `install.sh` references only.
-
-### Phase 1 — Plan (no moves yet)
-
-- [ ] List consumers: `install.sh`, `herdr.json`, `herdr-doctor`, shell `herder-*`
-- [ ] Confirm `kimi-toolchain/src/lib/herdr-project-config.ts` stays in sync with `herdr-project`
-- [ ] Decide install path: `bun run sync` → `~/.local/bin/` vs dx-config `install.sh` copy
-
-### Phase 2 — Move source
-
-| From (dx-config) | To (kimi-toolchain) |
-|------------------|---------------------|
-| `local/bin/herdr-doctor` | `src/cli/herdr-doctor.ts` or `tools/` |
-| `local/bin/herdr-project` | `src/cli/herdr-project.ts` |
-| `config/dx/lib/herdr-agents.ts` | `src/lib/herdr-agents.ts` |
-| `local/bin/herdr-spawn` | thin wrapper or merged into spawn stubs |
-
-### Phase 3 — Wire install
-
-- [ ] `bun run sync` publishes binaries to `~/.local/bin/`
-- [ ] dx-config `install.sh` stops copying migrated tools (or copies from sync output)
-- [ ] dx-config `install.sh` keeps: symlinks, spawn stubs if still needed, skill links
-
-### Phase 4 — Verify
-
-```sh
-herdr-doctor
-herdr-project discover ~/kimi-toolchain
-herder ~/dx-config
-```
-
-### Phase 5 — Cleanup dx-config
-
-- [ ] Remove migrated sources from `local/bin/` and `config/dx/lib/`
-- [ ] Update `AGENTS.md`, `README.md`, `SCOPE.md` debt section
-- [ ] One commit in each repo
+`herdr-doctor`, `herdr-project`, and `herdr-spawn` are authored in `kimi-toolchain` (`src/bin/`, `src/lib/herdr-agents.ts`). Deployed via `bun run sync` → `~/.kimi-code/tools/` and `bun run install-wrappers` → `~/.local/bin/`. dx-config `install.sh` delegates to that flow and only copies thin `herdr-spawn-*` stubs plus `herdr-quickref`.
 
 ---
 
@@ -186,6 +136,3 @@ herder ~/dx-config
 
 *Last updated: 2026-06-16*
 
-### Migration note
-
-Upstream `kimi-toolchain` now includes `src/lib/herdr-project-config.ts` and integration tests — align with dx-config `local/bin/herdr-project` before Phase 2 moves.

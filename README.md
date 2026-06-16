@@ -26,7 +26,7 @@ dx-config/
 │   └── templates/
 ├── config/shell/        # Shell helpers (deployed to ~/.config/shell/)
 ├── config/agents/       # Agent skills (deployed to ~/.config/agents/)
-├── local/bin/           # herdr-spawn*, herdr-doctor, herdr-project
+├── local/bin/           # herdr-spawn-* stubs, herdr-quickref (CLIs in kimi-toolchain)
 └── scripts/install.sh   # Symlink deploy
 ```
 

@@ -3,7 +3,8 @@
 **Purpose**: Opinionated, machine-specific layer on top of upstream Herdr ([herdr.dev/docs](https://herdr.dev/docs/)).
 
 - **Upstream** = canonical behavior, full agent matrix, integrations, session restore rules, `herdr agent` CLI, debugging tools, plugins, and marketplace.
-- **This dx-config layer** (`config/dx/`, `herdr-agents.ts`, spawn wrappers, `install.sh`, control skill) = how *this Mac* wires and launches its daily herd.
+- **This dx-config layer** (`config/dx/`, spawn stubs, `install.sh`, control skill) = how *this Mac* wires and launches its daily herd.
+- **kimi-toolchain** (`src/lib/herdr-agents.ts`, `herdr-doctor`, `herdr-project`, `herdr-spawn`) = executable logic synced to `~/.kimi-code/tools/`.
 
 This document is the single source of truth for **this machine's** agent wiring, keybindings, spawn paths, and control skill distribution. It deliberately focuses on a 6-agent subset chosen for daily work.
 
@@ -67,11 +68,11 @@ DX layer (machine policy only)
 |-------|---------|---------------|------------|
 | Integration hooks | Lifecycle + session restore / identity | `herdr.json` + `herdr-doctor` | kimi, hermes, codex, claude, cursor |
 | Screen detection | idle/working/blocked from terminal output | Agent manifests (remote + optional local overrides) | All 6 |
-| DX spawn path | Launch binary from pane with correct PATH | `herdr-agents.ts` → `herdr-spawn-*` + keybindings + `herdr-project` | codex, kimi, hermes, grok, claude (cursor via CLI) |
+| DX spawn path | Launch binary from pane with correct PATH | `kimi-toolchain/src/lib/herdr-agents.ts` → `herdr-spawn-*` + keybindings + `herdr-project` | codex, kimi, hermes, grok, claude (cursor via CLI) |
 
 ---
 
-## Canonical Registry (`config/dx/lib/herdr-agents.ts`)
+## Canonical Registry (`kimi-toolchain/src/lib/herdr-agents.ts`)
 
 ```ts
 export const AGENT_COMMANDS: Record<string, string[]> = {
@@ -157,7 +158,7 @@ Local copy: `~/.config/agents/skills/herdr/SKILL.md` (deployed from `config/agen
 | `~/.config/herdr/` | Runtime only: socket, logs, `session.json` |
 | `~/.config/shell/herdr.sh` | Shell helpers (`herder`, `herder-remote`, …) |
 | `~/.config/agents/skills/herdr/` | Canonical Herdr control skill |
-| `~/.config/dx/lib/herdr-agents.ts` | Shared agent path resolution |
+| `~/.kimi-code/lib/herdr-agents.ts` | Synced agent path resolution (source in kimi-toolchain) |
 | `~/.local/bin/herdr-spawn-*` | Keybinding-safe agent launchers |
 
 ## Commands

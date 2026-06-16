@@ -26,13 +26,21 @@ echo "dx-config install from $REPO"
 link_file "$REPO/config/dx/herdr.toml" "$HOME/.config/dx/herdr.toml"
 link_file "$REPO/config/dx/herdr.json" "$HOME/.config/dx/herdr.json"
 link_file "$REPO/config/dx/herdr.md" "$HOME/.config/dx/herdr.md"
-link_file "$REPO/config/dx/lib/herdr-agents.ts" "$HOME/.config/dx/lib/herdr-agents.ts"
 link_file "$REPO/config/dx/templates/herdr.project.toml" "$HOME/.config/dx/templates/herdr.project.toml"
 link_file "$REPO/config/shell/herdr.sh" "$HOME/.config/shell/herdr.sh"
 link_file "$REPO/config/agents/skills/herdr/SKILL.md" "$HOME/.config/agents/skills/herdr/SKILL.md"
 
-# Bin scripts use relative imports from ~/.local/bin — copy, don't symlink.
-for bin in "$REPO"/local/bin/herdr-*; do
+# Herdr CLIs (doctor, project, spawn) are authored in kimi-toolchain → ~/.local/bin via sync.
+KIMI_TOOLCHAIN="${KIMI_TOOLCHAIN:-$HOME/kimi-toolchain}"
+if [[ -x "$KIMI_TOOLCHAIN/scripts/install-bin-wrappers.sh" ]]; then
+  bash "$KIMI_TOOLCHAIN/scripts/install-bin-wrappers.sh"
+else
+  echo "warn: kimi-toolchain not found — run: cd ~/kimi-toolchain && bun run sync && bun run install-wrappers"
+fi
+
+# Thin spawn stubs + quickref only (no business logic).
+for bin in "$REPO"/local/bin/herdr-quickref "$REPO"/local/bin/herdr-spawn-*; do
+  [[ -e "$bin" ]] || continue
   name="$(basename "$bin")"
   dest="$HOME/.local/bin/$name"
   if [[ -L "$dest" ]]; then

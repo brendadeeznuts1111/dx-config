@@ -447,6 +447,23 @@ herdr agent explain --file screen.txt --agent codex --json
 
 When `HERDR_ENV=1`, you are inside a Herdr pane — do not nest `herdr`.
 
+### Debug escape hatch (`--no-session`)
+
+`herdr --no-session` runs without the background server/client split — no socket, no detach/reattach, no remote or named sessions.
+
+| Scenario | Use `--no-session`? |
+|----------|---------------------|
+| Isolate finish-work / doctor / orchestrator bugs | Yes |
+| Daily dev, agent state, remote, handoff | No — use `herder` / persistent server |
+
+```sh
+herdr --no-session
+bun run finish-work --dry-run --json    # gates without git side effects
+bun run finish-work --skip-git --json    # gates only
+```
+
+`HERDR_ENV` and `HERDR_PANE_ID` may be unset; socket RPC paths (`watch-events`, `report-agent`) skip or differ. For live pane inspection without leaving persistent mode: `herdr agent attach <agent> --takeover`.
+
 ## Control Skill Installation (`install.sh`)
 
 ```sh
